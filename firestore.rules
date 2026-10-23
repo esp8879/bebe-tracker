@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // The household id in the URL is the secret. It must be a long, random,
+    // URL-safe token. Nothing outside a household path is readable or writable.
+    match /households/{hid}/{document=**} {
+      allow read, write: if hid.size() >= 24 && hid.matches('^[A-Za-z0-9_-]+$');
+    }
+  }
+}

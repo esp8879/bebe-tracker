@@ -1,0 +1,164 @@
+<title>bébé tracker guide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@800&display=swap">
+<style>
+  :root { --bg: #f3f2f7; --card: #ffffff; --line: #dedde8; --ink: #1c1b2e; --muted: #6b6a80; --accent: #c9407a; --accent-ink: #ffffff; --soft: #fbe7f0; --pink: #c9407a; --shadow: 0 10px 30px rgba(28,27,46,.10); --phone-bg: #12131a; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #12131a; --card: #1c1e29; --line: #2f3145; --ink: #eef0f6; --muted: #9ba0b8; --accent: #ff9ac2; --accent-ink: #2b0f1d; --soft: #2a2230; --pink: #ff9ac2; --shadow: 0 10px 30px rgba(0,0,0,.45); } }
+  :root[data-theme="dark"] { --bg: #12131a; --card: #1c1e29; --line: #2f3145; --ink: #eef0f6; --muted: #9ba0b8; --accent: #ff9ac2; --accent-ink: #2b0f1d; --soft: #2a2230; --pink: #ff9ac2; --shadow: 0 10px 30px rgba(0,0,0,.45); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; font-size: 17px; line-height: 1.5; padding: 0 20px; padding-block: 0 80px; }
+  h1, h2, h3 { font-family: "Nunito", -apple-system, system-ui, sans-serif; font-weight: 800; margin: 0; text-wrap: balance; line-height: 1.1; letter-spacing: -.02em; }
+  h1 { font-size: clamp(38px, 7vw, 60px); }
+  h1 span { color: var(--accent); }
+  h2 { font-size: clamp(26px, 4vw, 34px); }
+  .mark { display: block; width: 64px; height: 64px; }
+  p { margin: 0; } a { color: var(--accent); }
+  .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 52px; }
+  header { padding-top: 56px; display: grid; gap: 16px; }
+  .lede { font-size: 20px; color: var(--muted); max-width: 52ch; }
+  .cta { display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 14px 22px; border-radius: 14px; text-decoration: none; font-size: 18px; }
+  .cta.secondary { background: var(--soft); color: var(--ink); }
+  .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+  section { display: grid; gap: 18px; }
+  .steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: s; }
+  .steps li { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; }
+  .steps li::before { counter-increment: s; content: counter(s); width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+  .steps b { display: block; }
+  .steps .muted { font-size: 15px; }
+
+  /* Screen viewer: a tab strip like the app's, one phone, one caption */
+  .viewer { display: grid; gap: 12px; justify-items: center; }
+  .tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 4px; width: 100%; max-width: 480px; }
+  .tabs button { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 700; font-size: 15px; padding: 10px 4px; border-radius: 12px; cursor: pointer; display: grid; gap: 2px; justify-items: center; }
+  .tabs button svg { width: 22px; height: 22px; }
+  .tabs button .f, .tabs button[aria-selected="true"] .o { display: none; }
+  .tabs button[aria-selected="true"] .f { display: block; }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+  .frame { height: min(calc(100vh - 230px), 640px); height: min(calc(100svh - 230px), 640px); max-width: 100%; aspect-ratio: 390 / 844; border-radius: 22px; border: 1px solid var(--line); background: var(--phone-bg); box-shadow: var(--shadow); display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .frame::-webkit-scrollbar { display: none; }
+  .frame img { display: block; flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; object-position: top; scroll-snap-align: start; scroll-snap-stop: always; }
+  .caps p[hidden] { display: none; }
+  .hint { font-size: 13px; color: var(--muted); }
+  .caps { max-width: 52ch; text-align: center; color: var(--muted); font-size: 15px; line-height: 1.4; }
+  .caps b { color: var(--ink); }
+
+  .tips { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+  .tip { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: grid; gap: 3px; font-size: 15px; }
+  .tip b { font-size: 16px; }
+  .faq { display: grid; gap: 12px; max-width: 64ch; }
+  .faq b { display: block; }
+  .muted { color: var(--muted); }
+  footer { color: var(--muted); font-size: 14px; max-width: 62ch; }
+  @media (max-width: 600px) { header { padding-top: 36px; } .wrap { gap: 40px; } .tabs button { font-size: 12px; padding: 8px 2px; } .tabs button svg { width: 18px; height: 18px; } }
+  .embedded .ctas, .embedded footer { display: none; }
+</style>
+<script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
+
+<div class="wrap">
+  <header>
+    <svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="110" fill="#12131a"/><circle cx="256" cy="256" r="172" fill="none" stroke="#ff9ac2" stroke-width="36"/><g transform="translate(124 124) scale(11)" fill="none" stroke="#ff9ac2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.25 5.5V4.5a1.75 1.75 0 0 1 3.5 0v1"/><rect x="8.75" y="5.5" width="6.5" height="2.75" rx="1"/><path d="M8.25 8.25h7.5v9.5a3 3 0 0 1-3 3h-1.5a3 3 0 0 1-3-3z"/><path d="M8.25 12h2.25M8.25 15h2.25"/></g></svg>
+    <h1>bébé <span>tracker</span></h1>
+    <p class="lede">A shared newborn logbook. Feeds, diapers, pumping, mom's meds, weight and appointments, in sync across your phones.</p>
+    <div class="ctas">
+      <a class="cta" href="https://bebe.fyi/">Open bébé tracker</a>
+      <a class="cta secondary" href="https://bebe.fyi/demo">Try the demo</a>
+      <a class="cta secondary" href="#start">Quick start</a>
+    </div>
+  </header>
+
+  <section id="start">
+    <h2>Quick start</h2>
+    <ol class="steps">
+      <li><div><b>Open bebe.fyi and tap "Start your household".</b><span class="muted">One per baby. No sign-up.</span></div></li>
+      <li><div><b>Answer four quick questions.</b><span class="muted">Baby's name and birth time, whose phone this is, how often feeds come around. All changeable later.</span></div></li>
+      <li><div><b>Send the link to your partner.</b><span class="muted">They open it, tap "I have a family link", and they're in the same log. The link is the key, so keep it between you.</span></div></li>
+      <li><div><b>Add it to both home screens.</b><span class="muted">iPhone: Safari, Share, Add to Home Screen. Android: Chrome menu, Add to Home screen.</span></div></li>
+      <li><div><b>Log the first feed.</b><span class="muted">Tap Feed, tap a volume, tap Save. The countdown starts.</span></div></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>The five screens</h2>
+    <div class="viewer">
+      <div class="tabs" role="tablist" aria-label="Screens">
+        <button role="tab" aria-selected="true" data-s="today"><svg class="o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 17.5h17"/><path d="M6.75 17.5a5.25 5.25 0 0 1 10.5 0"/><path d="M12 6V3.75M5.4 9.9 3.8 8.3M18.6 9.9l1.6-1.6"/></svg><svg class="f" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 17.5h17"/><path d="M6.75 17.5a5.25 5.25 0 0 1 10.5 0z" fill="currentColor"/><path d="M12 6V3.75M5.4 9.9 3.8 8.3M18.6 9.9l1.6-1.6"/></svg>Today</button>
+        <button role="tab" aria-selected="false" data-s="summary"><svg class="o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="7" r="1.1" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="5" cy="17" r="1.1" fill="currentColor" stroke="none"/><path d="M9 7h11M9 12h8M9 17h10"/></svg><svg class="f" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="7" r="1.4" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="5" cy="17" r="1.4" fill="currentColor" stroke="none"/><path d="M9 7h11M9 12h8M9 17h10" stroke-width="2.25"/></svg>Summary</button>
+        <button role="tab" aria-selected="false" data-s="weight"><svg class="o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5h17c0 3.2-3.8 5.25-8.5 5.25S3.5 10.7 3.5 7.5z"/><path d="M12 12.75v2.75"/><path d="M6.5 15.5h11a1.5 1.5 0 0 1 1.5 1.5v3H5v-3a1.5 1.5 0 0 1 1.5-1.5z"/></svg><svg class="f" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5h17c0 3.2-3.8 5.25-8.5 5.25S3.5 10.7 3.5 7.5z" fill="currentColor"/><path d="M12 12.75v2.75"/><path d="M6.5 15.5h11a1.5 1.5 0 0 1 1.5 1.5v3H5v-3a1.5 1.5 0 0 1 1.5-1.5z" fill="currentColor"/></svg>Weight</button>
+        <button role="tab" aria-selected="false" data-s="appointments"><svg class="o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="12" cy="15.25" r="1.5" fill="currentColor" stroke="none"/></svg><svg class="f" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3v2h-17z" fill="currentColor"/><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4"/><circle cx="12" cy="15.25" r="1.75" fill="currentColor" stroke="none"/></svg>Appts</button>
+        <button role="tab" aria-selected="false" data-s="settings"><svg class="o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h2.5M11.5 7.5H20M4 16.5h8.5M17.5 16.5H20"/><circle cx="9" cy="7.5" r="2.5"/><circle cx="15" cy="16.5" r="2.5"/></svg><svg class="f" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h2.5M11.5 7.5H20M4 16.5h8.5M17.5 16.5H20"/><circle cx="9" cy="7.5" r="2.5" fill="currentColor"/><circle cx="15" cy="16.5" r="2.5" fill="currentColor"/></svg>Settings</button>
+      </div>
+      <div class="caps">
+        <p data-s="today"><b>Today.</b> Countdown to the next feed, the last pump, mom's meds as countdowns or last-taken times, today's totals, the latest weight, the next appointment. The dock logs anything in one to three taps.</p>
+        <p data-s="summary" hidden><b>Summary.</b> One row per day, the numbers the pediatrician asks for. Tap a day for its entries, or switch to All entries to filter, edit and delete.</p>
+        <p data-s="weight" hidden><b>Weight.</b> Birth weight first, then each weigh-in in pounds and ounces. Every entry shows the change from birth and from last time.</p>
+        <p data-s="appointments" hidden><b>Appts.</b> Doctor or place, what it's for, when. The next one shows on Today.</p>
+        <p data-s="settings" hidden><b>Settings.</b> Feed and med intervals from the discharge sheet, the Tylenol and Ibuprofen rotation, your names, mL or oz, and the family link.</p>
+      </div>
+      <div class="frame">
+        <img data-s="today" src="/notes/shots/today.png" alt="Today screen: feed and med countdowns, today's totals, weight and next appointment, and the Feed, Diaper, Pump and Meds dock.">
+        <img data-s="summary" src="/notes/shots/summary.png" alt="Summary screen: one row per day with feeds, bottle volume, pumps, diapers and stool colour.">
+        <img data-s="weight" src="/notes/shots/weight.png" alt="Weight screen: a line chart since birth and a list of weigh-ins.">
+        <img data-s="appointments" src="/notes/shots/appointments.png" alt="Appointments screen listing upcoming visits.">
+        <img data-s="settings" src="/notes/shots/settings.png" alt="Settings screen with med intervals and the Tylenol / Ibuprofen rotation.">
+      </div>
+      <div class="hint">Swipe the phone or tap a tab</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Logging in the dark</h2>
+    <div class="tips">
+      <div class="tip"><b>Every sheet opens at now.</b>Tap −5 or +5 to nudge, or tap the time for a full picker.</div>
+      <div class="tip"><b>Wet is two taps.</b>Diaper, then Wet, saved. Dirty asks for a colour, and the colour tap saves.</div>
+      <div class="tip"><b>Made a mistake?</b>Tap an entry to edit. Swipe left to delete. Undo sits at the bottom for ten seconds.</div>
+      <div class="tip"><b>Mom's meds count down too.</b>Enter the hours between doses in Settings. The app never suggests an interval or a dose.</div>
+      <div class="tip"><b>No signal, no problem.</b>Entries save on the phone and sync when you're back online.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Good to know</h2>
+    <div class="faq">
+      <p><b>The link is the key.</b> No accounts or passwords. Anyone with your household link can read and add to your log, so only share it with your partner.</p>
+      <p><b>Opened it on a new phone and the log is empty?</b> Tap "I have a family link" on the welcome screen, or "Wrong household on this device?" in Settings, and paste your link.</p>
+      <p><b>Where's the data?</b> On Google's Firebase under your household's random address. Settings has a CSV export, a full JSON backup, and a Delete button for when you're done.</p>
+    </div>
+  </section>
+
+  <footer>Built by a new dad in the first week home, because the alternatives were worse. Curious how it came together? See the <a href="/notes/">release notes</a>.</footer>
+</div>
+
+<script>
+  (function () {
+    var names = ['today', 'summary', 'weight', 'appointments', 'settings'];
+    var tabs = document.querySelectorAll('.tabs [role="tab"]');
+    var frame = document.querySelector('.frame');
+    var caps = document.querySelectorAll('.caps p');
+    var current = 0;
+    function show(i) {
+      current = i;
+      tabs.forEach(function (b, k) { b.setAttribute('aria-selected', String(k === i)); });
+      caps.forEach(function (el, k) { el.hidden = k !== i; });
+    }
+    function go(i, instant) {
+      i = Math.max(0, Math.min(names.length - 1, i));
+      show(i);
+      frame.scrollTo({ left: i * frame.clientWidth, behavior: instant ? 'auto' : 'smooth' });
+    }
+    tabs.forEach(function (b, k) { b.addEventListener('click', function () { go(k); }); });
+    // Keep tabs and caption in step with the finger
+    var raf = 0;
+    frame.addEventListener('scroll', function () {
+      if (raf) return;
+      raf = requestAnimationFrame(function () {
+        raf = 0;
+        var i = Math.round(frame.scrollLeft / frame.clientWidth);
+        if (i !== current) show(i);
+      });
+    }, { passive: true });
+    window.addEventListener('resize', function () { go(current, true); });
+    document.querySelector('.tabs').addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight') { go(current + 1); tabs[current].focus(); }
+      if (e.key === 'ArrowLeft') { go(current - 1); tabs[current].focus(); }
+    });
+  })();
+</script>

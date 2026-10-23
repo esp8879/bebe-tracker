@@ -1,0 +1,422 @@
+<title>bébé tracker release notes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #f3f2f7; --card: #ffffff; --line: #dedde8; --ink: #1c1b2e; --muted: #6b6a80;
+    --accent: #c9407a; --accent-soft: #fbe7f0; --pink: #7c8ce0; --shadow: 0 10px 30px rgba(28, 27, 46, .10);
+    --phone-bg: #12131a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12131a; --card: #1c1e29; --line: #2f3145; --ink: #eef0f6; --muted: #9ba0b8;
+      --accent: #ff9ac2; --accent-soft: #2a2230; --pink: #8fa8ff; --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12131a; --card: #1c1e29; --line: #2f3145; --ink: #eef0f6; --muted: #9ba0b8;
+    --accent: #ff9ac2; --accent-soft: #2a2230; --pink: #8fa8ff; --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif; font-size: 17px; line-height: 1.55; padding: 0 20px; padding-block: 0 80px; }
+  h1, h2, h3 { font-family: "Nunito", -apple-system, system-ui, sans-serif; font-weight: 800; margin: 0; text-wrap: balance; letter-spacing: -.02em; }
+  h1 { font-size: clamp(40px, 7vw, 64px); line-height: 1.02; }
+  h1 span { color: var(--accent); }
+  h2 { font-size: clamp(26px, 4vw, 34px); line-height: 1.15; }
+  h3 { font-size: 20px; }
+  .mark { display: block; width: 64px; height: 64px; }
+  p { margin: 0; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  .prose { max-width: 62ch; }
+  .eyebrow { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+  header { padding-block: 56px 32px; display: grid; gap: 18px; }
+  header .lede { font-size: 20px; color: var(--muted); max-width: 58ch; }
+  .facts { display: flex; flex-wrap: wrap; gap: 10px 28px; color: var(--muted); font-size: 15px; }
+  .facts b { color: var(--ink); font-weight: 700; }
+
+  /* hero: three home screens */
+  .hero { padding-block: 24px 8px; display: grid; gap: 18px; }
+  .phones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+  .phone { margin: 0; display: grid; gap: 10px; min-width: 0; }
+  .phone .screen { border-radius: 26px; border: 1px solid var(--line); background: var(--phone-bg); overflow: hidden; box-shadow: var(--shadow); aspect-ratio: 390 / 844; }
+  .phone img { display: block; width: 100%; max-width: 100%; height: auto; }
+  .phone figcaption { font-size: 14px; color: var(--muted); line-height: 1.4; }
+  .phone figcaption b { color: var(--ink); display: block; font-weight: 700; }
+
+  /* releases */
+  .releases { display: grid; gap: 28px; padding-block: 40px 0; }
+  .release { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 28px; padding-block: 34px; border-top: 1px solid var(--line); }
+  .stamp { display: grid; gap: 6px; align-content: start; }
+  .stamp .ver { font-family: "Nunito", -apple-system, system-ui, sans-serif; font-size: 34px; font-weight: 800; line-height: 1; color: var(--accent); }
+  .stamp .when { font-size: 14px; color: var(--muted); }
+  .body { display: grid; gap: 20px; min-width: 0; }
+  .body h2 { margin-bottom: 2px; }
+  .notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; max-width: 66ch; }
+  .notes li { position: relative; padding-left: 22px; }
+  .notes li::before { content: ""; position: absolute; left: 0; top: .62em; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+  .notes li.fix::before { background: var(--pink); }
+  .notes li b { font-weight: 700; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--pink); margin-left: 6px; }
+  .shots { display: flex; gap: 18px; overflow-x: auto; padding: 6px 2px 14px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+  .shots .phone { flex: 0 0 200px; scroll-snap-align: start; }
+
+  .aside { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px 24px; display: grid; gap: 10px; }
+  .aside h3 { margin-bottom: 4px; }
+  .aside ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink); }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding-block: 44px 0; }
+  footer { padding-block: 48px 0; color: var(--muted); font-size: 14px; max-width: 62ch; }
+
+  @media (max-width: 760px) {
+    .release { grid-template-columns: 1fr; gap: 14px; padding-block: 28px; }
+    .stamp { grid-template-columns: auto 1fr; align-items: baseline; gap: 12px; }
+    .stamp .ver { font-size: 28px; }
+    .grid2 { grid-template-columns: 1fr; }
+    .phones { grid-template-columns: repeat(3, 200px); overflow-x: auto; padding-bottom: 12px; }
+    header { padding-block: 36px 24px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .phone .screen { transition: transform .25s ease; }
+    .phone .screen:hover { transform: translateY(-3px); }
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Release notes · Sep 12 – Oct 23, 2026</div>
+    <svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="110" fill="#12131a"/><circle cx="256" cy="256" r="172" fill="none" stroke="#ff9ac2" stroke-width="36"/><g transform="translate(124 124) scale(11)" fill="none" stroke="#ff9ac2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.25 5.5V4.5a1.75 1.75 0 0 1 3.5 0v1"/><rect x="8.75" y="5.5" width="6.5" height="2.75" rx="1"/><path d="M8.25 8.25h7.5v9.5a3 3 0 0 1-3 3h-1.5a3 3 0 0 1-3-3z"/><path d="M8.25 12h2.25M8.25 15h2.25"/></g></svg>
+    <h1>bébé <span>tracker</span></h1>
+    <p class="lede">A shared logbook for a newborn's feeds, diapers, pumping and mom's meds. Two phones, one live dataset, built for one-handed use at 3 am. This page follows how it changed over its first ten days.</p>
+    <div class="facts">
+      <span><b>53</b> releases</span>
+      <span><b>42</b> days</span>
+      <span><b>5</b> tabs</span>
+      <span><b>32</b> automated tests</span>
+      <span>Live at <a href="https://bebe.fyi">bebe.fyi</a></span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h2>The home screen, three days running</h2>
+    <p class="prose" style="color: var(--muted)">Same demo data on each. What changed is how much the screen asks of a tired parent.</p>
+    <div class="phones">
+      <figure class="phone">
+        <div class="screen"><img src="shots/v1-today.png" alt="Home screen on day one: a large next-feed card, a list of med countdowns, four big logging buttons, a weight and bilirubin button, and stats that run off the bottom of the screen." loading="lazy"></div>
+        <figcaption><b>Sep 12 · first release</b>One big feed timer, big buttons, and the day's totals pushed below the fold.</figcaption>
+      </figure>
+      <figure class="phone">
+        <div class="screen"><img src="shots/sep13-today.png" alt="Home screen on day two: separate large cards for the feed timer and the Tylenol and Ibuprofen rotation, each with a clock time, then the logging buttons." loading="lazy"></div>
+        <figcaption><b>Sep 13 · rotation and clock times</b>Smarter, but each card grew and the totals sank further.</figcaption>
+      </figure>
+      <figure class="phone">
+        <div class="screen"><img src="shots/today.png" alt="Home screen on day three: one slim card listing feed, Tylenol and Lovenox timers with bold due times, the day's totals, the next appointment, and a four-button dock above the tab bar." loading="lazy"></div>
+        <figcaption><b>Sep 14 onward · everything on one screen</b>Timers, totals, weight and the next appointment fit without scrolling. Logging moved to a dock.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="releases">
+    <article class="release">
+      <div class="stamp"><div class="ver">1.0</div><div class="when">Fri Sep 12 · evening</div></div>
+      <div class="body">
+        <h2>First night</h2>
+        <ul class="notes">
+          <li><b>Four screens.</b> Today with a next-feed countdown and quick-log buttons, History, a per-day Summary table for the pediatrician, and Settings.</li>
+          <li><b>Two phones, one log.</b> Entries appear on the other phone in about a second. Logging works offline and catches up when the signal returns.</li>
+          <li><b>No accounts.</b> A private link is the key. Open it once, add it to the home screen, done.</li>
+          <li><b>Fast entry.</b> A bottle feed is three taps, a wet diaper is two, every time field defaults to now with −5 / +5 nudges.</li>
+          <li><b>Delete with undo.</b> Nothing is ever hard-deleted, and a ten-second Undo follows every delete.</li>
+          <li><b>Scope cut the same evening.</b> Weight and bilirubin tracking came out. The app is for feeds, diapers, pumping and meds.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/v1-history.png" alt="First-release History tab: a reverse-chronological list of entries grouped by day with filter chips." loading="lazy"></div><figcaption><b>History</b>Every entry, newest first, tap to edit.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.1</div><div class="when">Fri Sep 12 · late</div></div>
+      <div class="body">
+        <h2>Meds on a schedule</h2>
+        <ul class="notes">
+          <li><b>Countdown per med.</b> Enter the hours between doses from the discharge sheet and Today shows "Lovenox in 3:57". The app never suggests an interval or a dose.</li>
+          <li><b>Staggered Tylenol / Ibuprofen.</b> One "next up" line that alternates between the two, honouring each med's own interval and the gap between them.</li>
+          <li><b>Clock times.</b> Every countdown also shows the time it lands on, so nobody does arithmetic at 3 am.</li>
+          <li><b>Diaper count.</b> A wet-and-dirty change is one diaper but two events. Today now counts both ways.</li>
+          <li><b>Set-up prompt.</b> If no intervals are set yet, Today says so and links to Settings instead of silently showing nothing.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.2</div><div class="when">Sat Sep 13</div></div>
+      <div class="body">
+        <h2>Polish, and a rescue</h2>
+        <ul class="notes">
+          <li class="fix"><b>Home-screen fix.</b><span class="tag">fix</span> Adding the app to an iPhone home screen opened an empty log, because iOS gives home-screen apps their own storage. The household now lives in the address itself, so the icon always opens the right data. No entries were lost.</li>
+          <li><b>Join screen.</b> A phone that doesn't know a household asks for the family link instead of quietly starting a new one. Settings can switch households too.</li>
+          <li><b>Swipe to delete.</b> Swipe a History row left for a red Delete, still with Undo.</li>
+          <li><b>Diaper sheet.</b> The same Now / −5 / +5 time row as every other sheet, for wet, dirty or both.</li>
+          <li><b>Stool colours.</b> Light brown and brown replace Other. A Diapers column joined the Summary table.</li>
+          <li><b>Naming.</b> Motrin became Ibuprofen, and the app became <i>bébé tracker</i>, lowercase.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/history.png" alt="History tab with the top row swiped left to reveal a red Delete button." loading="lazy"></div><figcaption><b>Swipe to delete</b>Swipe left, tap Delete, Undo if you slip.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/sheet-diaper.png" alt="Diaper sheet with time row, Wet and Dirty toggles, and six stool colour chips including light brown and brown." loading="lazy"></div><figcaption><b>Diaper sheet</b>Time first, then tap a colour to save.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.3</div><div class="when">Sun Sep 14</div></div>
+      <div class="body">
+        <h2>Appointments and a calmer home screen</h2>
+        <ul class="notes">
+          <li><b>Appointments tab.</b> Pediatrician, OB, imaging or other, with date, time, location and notes. Upcoming first, past ones dimmed below, synced to both phones.</li>
+          <li><b>Next appointment on Today.</b> One card with what, when and where, and how far away it is.</li>
+          <li><b>One-screen Today.</b> Timers collapsed into a single card with bold due times and a short "last" line each. Totals and the next appointment sit underneath. Nothing to scroll.</li>
+          <li><b>The dock.</b> Feed, Diaper, Pump and Meds moved to a fixed row above the tabs, always under the thumb, still one tap.</li>
+          <li><b>Tabs reordered.</b> Today, Summary, History, Appts, Settings.</li>
+          <li class="fix"><b>iOS date field.</b><span class="tag">fix</span> The date-of-birth field no longer breaks the Settings grid on iPhone.</li>
+          <li><b>"Mom med" is now "Meds"</b> everywhere.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/appointments.png" alt="Appointments tab listing an upcoming pediatrician weight check and an OB incision check with dates, relative times and locations." loading="lazy"></div><figcaption><b>Appointments</b>Upcoming, with how far away each one is.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/sheet-feed.png" alt="Feed sheet with a segmented control for breast, formula, bottled breast milk or mixed, volume chips from 15 to 90 mL, a stepper, and the time row." loading="lazy"></div><figcaption><b>Feed sheet</b>Kind, a volume chip, Save. Three taps.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/sheet-meds.png" alt="Meds sheet with chips for Tylenol, Ibuprofen, Oxycodone, Lovenox, stool softener, prenatal and other, a dose text field and the time row." loading="lazy"></div><figcaption><b>Meds sheet</b>Tap the med, optionally type the dose as written on the bottle.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/summary.png" alt="Summary tab: a table with one row per day showing age, feeds, breast sessions, formula mL, pumped mL, diapers, wet, dirty and last stool colour." loading="lazy"></div><figcaption><b>Summary</b>One row per day for the pediatrician.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/settings.png" alt="Settings tab showing med interval fields in hours for each med and the Tylenol / Ibuprofen rotation toggle with its gap." loading="lazy"></div><figcaption><b>Settings</b>Intervals in hours, blank until you enter them.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.4</div><div class="when">Sun Sep 14 · evening</div></div>
+      <div class="body">
+        <h2>Weight, and a home of its own</h2>
+        <ul class="notes">
+          <li><b>Weight tab.</b> Log each weigh-in in pounds and ounces, the way the pediatrician says it, with grams alongside. The first entry is the birth weight and every later one shows its change from birth and from the previous visit.</li>
+          <li><b>Weight chart.</b> A line since birth with the birth weight as a reference line, labelled in pounds and ounces. Touch a point for its details.</li>
+          <li><b>Weight on Today.</b> A small card with the latest weight, percent from birth, and a sparkline, next to the next appointment.</li>
+          <li><b>History folded into Summary.</b> Summary now has two views, "By day" and "All entries", so the filterable list survived and the tab bar stays at five.</li>
+          <li class="fix"><b>Bottle totals.</b><span class="tag">fix</span> The mL tally counted formula only. It now counts every bottle, with formula and breast milk broken out, and Summary gained a Bottle mL column. Breastfeeding has no volume, so it stays a session count.</li>
+          <li><b>bebe.fyi.</b> The app moved to its own domain. Old links keep working, and these notes live at <a href="https://bebe.fyi/notes/">bebe.fyi/notes</a>.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/weight.png" alt="Weight tab: a line chart since birth with a birth-weight reference line, above a list of weigh-ins showing percent from birth and change from the previous one." loading="lazy"></div><figcaption><b>Weight</b>Chart since birth, then every weigh-in.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/summary-entries.png" alt="Summary tab in All entries mode with By day / All entries toggle and filter chips above a list of the day's entries." loading="lazy"></div><figcaption><b>Summary · All entries</b>The old History list, now inside Summary.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.5</div><div class="when">Sep 15 – 19</div></div>
+      <div class="body">
+        <h2>Small things, all from real use</h2>
+        <ul class="notes">
+          <li><b>Countdowns read like speech.</b> "Feed in 1h 47m", "Tylenol in 2h", not "1:47". The due clock time sits in its own pill on the right of each row.</li>
+          <li><b>Next appointment leads with the day.</b> "Tomorrow 10:30 AM" is the headline, then the doctor or place, then what the visit is for. A countdown appears only once it's within 24 hours. The appointment type is gone entirely: the doctor's name says more than "Pediatrician".</li>
+          <li><b>Weight card shows the date beside the weight</b>, so you know when it was taken at a glance.</li>
+          <li><b>Summary table reshaped.</b> Breast count out; bottle mL, formula mL and breast-milk mL side by side; pump count before pumped mL.</li>
+          <li class="fix"><b>Icons that read on dark.</b><span class="tag">fix</span> The stethoscope emoji is drawn in dark grey and vanished on the card.</li>
+          <li class="fix"><b>Past appointments</b><span class="tag">fix</span> read "-1 days ago". Now "1 day ago".</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/today.png" alt="Today screen with due times in pills, countdowns like 'Feed in 1h 35m', and the weight and next-appointment cards side by side." loading="lazy"></div><figcaption><b>Today</b>Pills for due times, day-first appointment card.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/summary.png" alt="Summary table with columns Day, Age, Feeds, Bottle mL, Formula mL, BM mL, Pumps, Pumped mL and more." loading="lazy"></div><figcaption><b>Summary</b>Bottle, formula and breast-milk mL side by side.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/appointments.png" alt="Appointments tab listing upcoming visits by doctor or place, with the visit purpose and date beneath." loading="lazy"></div><figcaption><b>Appointments</b>Doctor or place first, then what it's for.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.6</div><div class="when">Mon Sep 21</div></div>
+      <div class="body">
+        <h2>Ready for other families</h2>
+        <ul class="notes">
+          <li><b>A welcome screen.</b> bebe.fyi now explains what the app is and offers "Start your household" or "I have a family link", instead of a bare paste box.</li>
+          <li><b>Two-minute setup.</b> Baby's name and birth time, who's holding the phone, feed interval, then share the link and add to home screen. Every step can be skipped and everything is editable in Settings.</li>
+          <li><b>A guide to send people</b> at <a href="https://bebe.fyi/guide/">bebe.fyi/guide</a>: quick start, a tour of the five screens, tips for logging in the dark, and what to know about the link and the data.</li>
+          <li><b>Generic defaults.</b> New households start as "Baby" born today, not with anyone else's details.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/welcome.png" alt="Welcome screen with a short description, four feature lines, a Start your household button and an I have a family link option." loading="lazy"></div><figcaption><b>Welcome</b>What it is, then one button.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/setup-4.png" alt="Setup step four: share the family link with your partner and add the app to the home screen on each phone." loading="lazy"></div><figcaption><b>Setup, last step</b>Share the link, add to home screen, start logging.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.7</div><div class="when">Mon Sep 21 · evening</div></div>
+      <div class="body">
+        <h2>Fit for other households</h2>
+        <ul class="notes">
+          <li class="fix"><b>Time zones.</b><span class="tag">fix</span> Days rolled over at New York midnight for everyone. A household now takes its time zone from the phone that creates it, and Settings can change it. History re-buckets to match.</li>
+          <li><b>Lighter loading.</b> The app keeps the last 30 days live and fetches older days only when Summary asks for them, so a fresh phone doesn't pull the whole history on first open.</li>
+          <li><b>Export and backup.</b> Settings can share a CSV of every entry or a full JSON backup through the phone's share sheet.</li>
+          <li><b>Delete this household.</b> One button, two confirmations, everything gone for both phones.</li>
+          <li><b>Units.</b> Choose mL or ounces first for bottles and pumping, pounds or grams first for weight. Both are always stored.</li>
+          <li><b>Your own meds.</b> Add any med by name in Settings; it gets a chip and a countdown like the built-in ones.</li>
+          <li><b>A third caregiver.</b> "Someone else" alongside Dad and Mom, with an editable name, for a grandparent or nanny.</li>
+          <li><b>Update prompt.</b> When a new build is ready the app says so and offers a reload, instead of quietly running the old one.</li>
+          <li><b>Feedback link</b> in Settings, so bug reports have somewhere to go.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.8</div><div class="when">Mon Sep 21 · night</div></div>
+      <div class="body">
+        <h2>Rough edges on the phone</h2>
+        <ul class="notes">
+          <li class="fix"><b>Guide and What's new open inside the app.</b><span class="tag">fix</span> On an iPhone home-screen app a link navigated the app away from itself with no way back. They now open in a viewer with a Close button.</li>
+          <li><b>Update prompt you can't miss.</b> A centered card over a dimmed screen with one button, Reload now. It shows when a new build is detected, on launch, on return to the app, and hourly.</li>
+          <li class="fix"><b>Sync badge told the truth too loudly.</b><span class="tag">fix</span> iOS freezes the app in the background and the connection goes stale, so "syncing…" could sit for a while after coming back. The app now reconnects the moment it returns, and the badge only appears after two seconds, turning amber after fifteen so a weak signal is obvious.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.9</div><div class="when">Tue Sep 22</div></div>
+      <div class="body">
+        <h2>A face of its own</h2>
+        <ul class="notes">
+          <li><b>No more emoji.</b> Thirty-eight of them are gone. Where a word already said it, on the filter chips, the diaper sheet, the welcome list and the update prompt, nothing replaced them.</li>
+          <li><b>An icon family drawn for this app.</b> Bottle, diaper, pump flange and a half-filled capsule for the four entry types; a sunrise, a log, a baby scale, a calendar and two sliders for the tabs. One stroke weight, one grid, all descended from the bottle in the app icon, which is now real vector art instead of an emoji and looks the same on every phone.</li>
+          <li><b>Colour that means something.</b> Each entry type has its own tint on its glyph alone: periwinkle feeds, aqua diapers, orchid pumps, amber meds. Rows in the log and the timers on Today scan by colour at 3 am.</li>
+          <li><b>Pink is the accent.</b> The pink ring on the home-screen icon now carries through to every Save button, active tab and segment. The old periwinkle survives as the feed tint and the weight chart line.</li>
+          <li><b>A wordmark.</b> "bébé tracker" is set in Nunito on the welcome screen and in the Settings footer, the only place a second typeface appears.</li>
+          <li><b>Smaller things.</b> Three corner radii instead of six. The welcome screen is the mark, the name, two lines and a button. Summary's filters fit on one line. The guide and these notes wear the same face.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/today.png" alt="Today screen with the new line icons: a periwinkle bottle on the feed timer, amber capsules on the med timers, tinted glyphs on the Feed, Diaper, Pump and Meds dock, and the sunrise tab highlighted in pink." loading="lazy"></div><figcaption><b>Today</b>Tinted glyphs on the timers and the dock, pink active tab.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/summary-entries.png" alt="Summary in All entries mode: text-only filter chips in one row and a list of entries each marked with a tinted line icon." loading="lazy"></div><figcaption><b>The log</b>One glyph per row, one colour per type.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/welcome.png" alt="Welcome screen: the app mark, the bébé tracker wordmark, a two-line description and a Start your household button." loading="lazy"></div><figcaption><b>Welcome</b>The mark, the name, and one button.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.10</div><div class="when">Thu Sep 24</div></div>
+      <div class="body">
+        <h2>Weaning off the schedule</h2>
+        <ul class="notes">
+          <li><b>Pumping on the home screen.</b> A new card under the feed timer: when the last pump was, how many today and how much. Set a pump interval in Settings and it counts down instead. Tap it to log a pump.</li>
+          <li><b>Last time only.</b> Once mom is deciding dose by dose rather than following the discharge schedule, a switch in Settings turns the countdowns off. The meds card then lists every med taken in the last 24 hours with how long ago and the clock time, plus the dose as written. Rows appear and drop away on their own as the meds do.</li>
+          <li><b>Three cards, still one screen.</b> Feed, pump and meds each get their own card, and the rows tightened so five timers still fit above the dock on an iPhone.</li>
+          <li><b>Guide, redone.</b> One phone, a tab strip like the app's, one line per screen. Swipe the phone or tap a tab. Half the words.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/today.png" alt="Today screen with three cards: feed countdown, last pump with today's count and volume, and Tylenol and Lovenox countdowns." loading="lazy"></div><figcaption><b>Countdowns</b>Feed, pump and meds, each in its own card.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/today-last.png" alt="Today screen in last-time-only mode: the meds card lists Tylenol, Ibuprofen and Lovenox with how long ago each was taken and the dose." loading="lazy"></div><figcaption><b>Last time only</b>How long ago, the clock time, the dose. She decides the next one.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/settings-today.png" alt="Settings: the Today screen card with a Countdown to next / Last time only switch and a pump interval field." loading="lazy"></div><figcaption><b>The switch</b>One setting, and a pump interval if you want one.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.11</div><div class="when">Thu Sep 25</div></div>
+      <div class="body">
+        <h2>From the couch</h2>
+        <ul class="notes">
+          <li><b>Last-time meds, last 24 hours.</b> The 1.10 window was a week, which kept meds on Today long after they'd stopped. Now a med drops off a day after its last dose.</li>
+          <li><b>Room to breathe.</b> With four timer rows or fewer, Today loosens up: taller rows, more space between cards. A fifth row switches back to the tight layout so everything still fits an iPhone 15 without scrolling.</li>
+          <li><b>Today so far reads in full sentences.</b> Two lines under the tiles: "Bottles: 165 mL formula · 40 mL breast milk" and "Breastfeeding: 1 session, 15 min", or "none today". No more wrapping.</li>
+          <li><b>Bottle presets for a two-week-old.</b> 60, 75, 90 and 100 mL replace the newborn-sized 15 to 90 chips.</li>
+          <li><b>MiraLax</b>, not "Stool softener", on the meds chips and countdowns.</li>
+          <li><b>Nits.</b> The feed and pump rows stand a little taller than the meds. The volume chips on the Feed sheet are centered.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/today.png" alt="Today screen with roomier spacing, and Bottles and Breastfeeding lines under the Today so far tiles." loading="lazy"></div><figcaption><b>Today</b>Roomier with four rows; Bottles and Breastfeeding spelled out.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/sheet-feed.png" alt="Feed sheet with volume chips 60, 75, 90 and 100 mL." loading="lazy"></div><figcaption><b>Feed sheet</b>Bigger presets.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.12</div><div class="when">Tue Sep 30</div></div>
+      <div class="body">
+        <h2>Export, actually</h2>
+        <ul class="notes">
+          <li class="fix"><b>CSV export and JSON backup were failing silently.</b><span class="tag">fix</span> The request for older history asked Firestore for more rows than it allows, the error was swallowed, and the button did nothing. Fixed, and a failure now says so in a toast.</li>
+          <li class="fix"><b>Older entries are included.</b><span class="tag">fix</span> The export could miss entries older than 30 days even when the fetch worked. Settings now loads the full history as soon as it opens, so the share sheet appears right on the tap, with everything in the file.</li>
+          <li><b>Home-screen fallback.</b> An iPhone home-screen app can't download files. If the share sheet isn't available, the export is copied to the clipboard instead, ready to paste into Notes or an email.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.13</div><div class="when">Tue Oct 7</div></div>
+      <div class="body">
+        <h2>Breastfeeds counted apart</h2>
+        <ul class="notes">
+          <li><b>Feeds means bottle feeds.</b> A breastfeed used to count as a feed with no millilitres behind it, which skewed the day's numbers. The Today tile is now "bottle feeds", and the Summary table's Feeds column counts bottles only.</li>
+          <li><b>Breastfeeds get their own tally.</b> A Breast column in the Summary table, and the Breastfeeding line on Today keeps the session count and minutes. The next-feed countdown still starts from whichever feed came last.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/today.png" alt="Today screen with a bottle feeds tile and a Breastfeeding line under the tiles." loading="lazy"></div><figcaption><b>Today</b>Bottle feeds in the tile, breastfeeds on their own line.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/summary.png" alt="Summary table with Feeds and Breast columns side by side." loading="lazy"></div><figcaption><b>Summary</b>Feeds and Breast, side by side.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.14</div><div class="when">Thu Oct 23</div></div>
+      <div class="body">
+        <h2>Done with meds</h2>
+        <ul class="notes">
+          <li><b>Meds tracking can be switched off.</b> A new Meds card at the top of the Settings list. Off hides the meds card on Today, greys out the Meds button in the dock, and tucks away the interval and rotation settings. Past doses stay in Summary and the exports, and everything comes back when you switch it on.</li>
+          <li class="fix"><b>No more blur under the clock.</b><span class="tag">fix</span> On a home-screen app, newer iPhones blur a band that reaches about 40 points below the status bar, and the baby's name sat inside it. Every screen now starts below that band, and tabs open scrolled to the top.</li>
+          <li><b>Today rebalanced for the lower start.</b> Three timer rows or fewer get the roomy layout; four or five switch to the tight one, which leaves out the appointment's "in 21h" line since the day and time are right above it. Five rows still fit an iPhone 15 without scrolling.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/today-meds-off.png" alt="Today screen with meds tracking off: feed and pump cards, Today so far, weight and next appointment, and a greyed-out Meds button in the dock." loading="lazy"></div><figcaption><b>Meds off</b>Two cards instead of three, Meds greyed out in the dock.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/settings-meds.png" alt="Settings: a Meds card with a Tracking meds / Off switch and a line explaining that history is kept." loading="lazy"></div><figcaption><b>The switch</b>Nothing is deleted.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.15</div><div class="when">Thu Oct 23 · evening</div></div>
+      <div class="body">
+        <h2>A demo, and the source</h2>
+        <ul class="notes">
+          <li><b>Look around before starting.</b> <a href="https://bebe.fyi/demo">bebe.fyi/demo</a> opens a made-up baby with a few days of feeds, diapers, pumping, meds, weigh-ins and appointments. Log, edit and change settings freely: it lives on that screen only, nothing is saved, and it never touches a real household. The welcome screen and the guide link to it.</li>
+          <li><b>Open source.</b> The code is public <a href="https://github.com/esp8879/bebe-tracker">on GitHub</a> under the MIT license, with a short README on running your own copy on a free Firebase project.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/welcome.png" alt="Welcome screen with Start your household, I have a family link already, and Look around a demo first." loading="lazy"></div><figcaption><b>Welcome</b>A third way in: the demo.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/demo-today.png" alt="The demo's Today screen with a pink Demo badge in the header." loading="lazy"></div><figcaption><b>The demo</b>Same app, pretend baby, nothing saved.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="grid2">
+    <div class="aside">
+      <h3>How it's built</h3>
+      <ul>
+        <li>A web app you add to the home screen. No app store, no updates to install.</li>
+        <li>Data lives in Firestore and streams to every open phone. Offline entries queue and sync later.</li>
+        <li>No accounts and no sign-in. The household link is the only secret, so it is shared between the two parents only.</li>
+        <li>Everything is stored in millilitres and grams and shown in whichever unit you pick first. Days roll over at midnight in the household's time zone.</li>
+        <li>It is a logbook, not a medical device. It has no thresholds, gives no advice and proposes no doses.</li>
+      </ul>
+    </div>
+    <div class="aside">
+      <h3>On the list</h3>
+      <ul>
+        <li>A per-day CSV of the Summary table (the entries CSV shipped in 1.7).</li>
+        <li>Daily counts against age-based targets, entered from the pediatrician, with paced progress through the day.</li>
+        <li>www.bebe.fyi redirect.</li>
+        <li>An Android pass; everything so far was verified on iPhone.</li>
+        <li>Feed and med reminders as notifications.</li>
+        <li>Simple charts on the Summary tab.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>Screenshots use a demo household with made-up entries, not the family's own log. Times shown are relative to when each screenshot was taken.</footer>
+</div>
