@@ -21,6 +21,9 @@ No accounts. The household id in the URL path (`/h/<24+ char token>`, legacy `#h
 - Default settings are written by the first client that sees a server-confirmed empty settings doc. No seed entries.
 - Firestore persistent cache handles offline queueing; `snapshot.metadata.hasPendingWrites` drives the sync badge.
 
+## Commits
+The repo is public (github.com/esp8879/bebe-tracker). Commit as `esp8879 <6955316+esp8879@users.noreply.github.com>` with no Co-Authored-By or other AI attribution lines. Never push the local `private-history` branch.
+
 ## Commands
 - `npm run dev` / `npm run build` / `npm test` (vitest: day bucketing, DST, summary aggregation, timers, units)
 - `npm run deploy` = build + `firebase deploy --only hosting,firestore`
