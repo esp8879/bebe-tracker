@@ -40,7 +40,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const toast = useCallback((msg: string, undo?: () => void) => {
     if (timer.current) window.clearTimeout(timer.current);
     setToastState({ msg, undo, key: Date.now() });
-    timer.current = window.setTimeout(() => setToastState(null), 10_000);
+    // Undo toasts stay long enough to change your mind; plain notices get out of the way.
+    timer.current = window.setTimeout(() => setToastState(null), undo ? 10_000 : 2_500);
   }, []);
 
   const openEditor = useCallback((type: EntryType, opts?: { entry?: Entry; preset?: EditorPreset }) => setEditor({ type, ...opts }), []);
@@ -61,7 +62,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ editor, apptEditor, openApptEditor, closeApptEditor, weightEditor, openWeightEditor, closeWeightEditor, openEditor, closeEditor, toast, deleteWithUndo }}>
       {children}
       {toastState && (
-        <div className="toast" key={toastState.key} role="status">
+        <div className="toast" key={toastState.key} role="status" onClick={(e) => { if (!(e.target as HTMLElement).closest('button')) setToastState(null); }}>
           <span className="grow">{toastState.msg}</span>
           {toastState.undo && <button onClick={() => { toastState.undo?.(); setToastState(null); }}>Undo</button>}
         </div>
