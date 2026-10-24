@@ -17,17 +17,19 @@ function DaysView() {
   const [open, setOpen] = useState<string | null>(null);
   const days = useMemo(() => summarize(entries), [entries]);
   const dob = parseNYLocal(settings.dob);
+  const diapers = settings.diapers_enabled !== false;
+  const cols = diapers ? 13 : 9;
   return (
     <div className="card" style={{ padding: 0 }}>
       <div className="table-wrap" style={{ margin: 0, padding: 0 }}>
         <table className="summary">
           <thead>
             <tr>
-              <th>Day</th><th>Age</th><th>Feeds</th><th>Breast</th><th>Bottle {volLabel()}</th><th>Formula {volLabel()}</th><th>BM {volLabel()}</th><th>Pumps</th><th>Pumped {volLabel()}</th><th>Diapers</th><th>Wet</th><th>Dirty</th><th>Stool</th>
+              <th>Day</th><th>Age</th><th>Feeds</th><th>Breast</th><th>Bottle {volLabel()}</th><th>Formula {volLabel()}</th><th>BM {volLabel()}</th><th>Pumps</th><th>Pumped {volLabel()}</th>{diapers && <><th>Diapers</th><th>Wet</th><th>Dirty</th><th>Stool</th></>}
             </tr>
           </thead>
           <tbody>
-            {days.length === 0 && <tr><td colSpan={12} className="muted">Nothing logged yet.</td></tr>}
+            {days.length === 0 && <tr><td colSpan={cols} className="muted">Nothing logged yet.</td></tr>}
             {days.map((d) => {
               const stool = d.last_stool ? STOOL_COLORS.find((c) => c.value === d.last_stool) : undefined;
               return [
@@ -41,13 +43,15 @@ function DaysView() {
                   <td>{d.breastmilk_bottle_ml ? volValue(d.breastmilk_bottle_ml) : '—'}</td>
                   <td>{d.pumps || '—'}</td>
                   <td>{d.pumped_ml ? volValue(d.pumped_ml) : '—'}</td>
-                  <td>{d.diapers}</td>
-                  <td>{d.wet}</td>
-                  <td>{d.dirty}</td>
-                  <td>{stool ? <span className="swatch" title={stool.label} style={{ background: stool.swatch }} /> : '—'}</td>
+                  {diapers && <>
+                    <td>{d.diapers}</td>
+                    <td>{d.wet}</td>
+                    <td>{d.dirty}</td>
+                    <td>{stool ? <span className="swatch" title={stool.label} style={{ background: stool.swatch }} /> : '—'}</td>
+                  </>}
                 </tr>,
                 open === d.day && (
-                  <tr key={`${d.day}-x`}><td className="expand" colSpan={12}>
+                  <tr key={`${d.day}-x`}><td className="expand" colSpan={cols}>
                     <div className="list" style={{ padding: '0 8px', background: 'var(--bg)' }}>{d.entries.map((e) => <EntryRow key={e.id} e={e} />)}</div>
                   </td></tr>
                 ),

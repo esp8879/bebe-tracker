@@ -67,6 +67,8 @@ export interface Settings {
   custom_meds?: string[];
   /** Meds tracking on Today and in the dock. Missing = on. History is always kept. */
   meds_enabled?: boolean;
+  /** Diaper tracking on Today, in the dock and in the Summary table. Missing = on. History is always kept. */
+  diapers_enabled?: boolean;
   /** Today screen: project the next pump and dose from intervals, or just show when each last happened. */
   today_mode?: 'countdown' | 'last';
   /** Minutes between pumps; blank = the pump row shows the last pump only. */

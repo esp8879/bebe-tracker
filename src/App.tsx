@@ -60,7 +60,9 @@ function Shell() {
   // Each tab opens at the top; otherwise a long tab's scroll carries over and tucks the next one under the status bar.
   useEffect(() => { window.scrollTo(0, 0); }, [tab]);
   const { editor, apptEditor, weightEditor, openEditor, toast } = useUI();
-  const medsOff = useStore().settings.meds_enabled === false;
+  const { settings: tracked } = useStore();
+  const medsOff = tracked.meds_enabled === false;
+  const diapersOff = tracked.diapers_enabled === false;
   return (
     <NavCtx.Provider value={{ tab, setTab }}>
     <div className="app">
@@ -72,7 +74,7 @@ function Shell() {
       {tab === 'today' && (
         <div className="dock"><div>
           <button onClick={() => openEditor('feed')}><span className="ico t-feed"><Icon name="feed" /></span>Feed</button>
-          <button onClick={() => openEditor('diaper')}><span className="ico t-diaper"><Icon name="diaper" /></span>Diaper</button>
+          <button className={diapersOff ? 'off' : ''} aria-disabled={diapersOff} onClick={() => (diapersOff ? toast('Diaper tracking is off. Turn it back on in Settings.') : openEditor('diaper'))}><span className="ico t-diaper"><Icon name="diaper" /></span>Diaper</button>
           <button onClick={() => openEditor('pump')}><span className="ico t-pump"><Icon name="pump" /></span>Pump</button>
           <button className={medsOff ? 'off' : ''} aria-disabled={medsOff} onClick={() => (medsOff ? toast('Meds tracking is off. Turn it back on in Settings.') : openEditor('mom_med'))}><span className="ico t-mom_med"><Icon name="mom_med" /></span>Meds</button>
         </div></div>

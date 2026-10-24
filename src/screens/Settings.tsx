@@ -173,6 +173,14 @@ export function Settings() {
       </div>
 
       <div className="card">
+        <h3>Diapers</h3>
+        <Seg<'on' | 'off'> options={[{ value: 'on', label: 'Tracking diapers' }, { value: 'off', label: 'Off' }]} value={settings.diapers_enabled === false ? 'off' : 'on'} onChange={(v) => void saveSettings({ diapers_enabled: v === 'on' })} />
+        <div className="muted small">{settings.diapers_enabled === false
+          ? 'Diaper counts are hidden on Today and in the Summary table, and the Diaper button is greyed out. Past changes stay in All entries and the exports.'
+          : 'Turn off once you stop counting diapers. Nothing is deleted.'}</div>
+      </div>
+
+      <div className="card">
         <h3>Today screen</h3>
         <Field label={settings.meds_enabled === false ? 'Pumps' : 'Pumps and meds'}>
           <Seg<'countdown' | 'last'> options={[{ value: 'countdown', label: 'Countdown to next' }, { value: 'last', label: 'Last time only' }]} value={settings.today_mode ?? 'countdown'} onChange={(v) => void saveSettings({ today_mode: v })} />

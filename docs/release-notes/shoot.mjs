@@ -88,6 +88,11 @@ const medsSwitch = (label) => [tap('.tabbar button:has-text("Settings")'), tap(`
 await shoot(LIVE, `/h/${HID}`, 'settings-meds', [...medsSwitch('Off'), async (p) => { const y = await p.evaluate(() => [...document.querySelectorAll('h3')].find((h) => h.textContent === 'Meds').getBoundingClientRect().top + window.scrollY - 12); await p.evaluate((y) => window.scrollTo(0, y), y); }]);
 await shoot(LIVE, `/h/${HID}`, 'today-meds-off', [tap('.tabbar button:has-text("Today")')]);
 await shoot(LIVE, `/h/${HID}`, 'meds-back-on', [...medsSwitch('Tracking meds'), tap('.tabbar button:has-text("Today")')]);
+// Diaper tracking off (demo household only): shoot, then switch it back on
+const diaperSwitch = (label) => [tap('.tabbar button:has-text("Settings")'), tap(`.card:has(h3:text-is("Diapers")) .seg button:has-text("${label}")`), async (p) => { await p.waitForTimeout(800); }];
+await shoot(LIVE, `/h/${HID}`, 'settings-diapers', [...diaperSwitch('Off'), async (p) => { const y = await p.evaluate(() => [...document.querySelectorAll('h3')].find((h) => h.textContent === 'Meds').getBoundingClientRect().top + window.scrollY - 12); await p.evaluate((y) => window.scrollTo(0, y), y); }]);
+await shoot(LIVE, `/h/${HID}`, 'today-diapers-off', [tap('.tabbar button:has-text("Today")')]);
+await shoot(LIVE, `/h/${HID}`, 'diapers-back-on', [...diaperSwitch('Tracking diapers'), tap('.tabbar button:has-text("Today")')]);
 if (process.env.OLD) {
   await shoot('http://localhost:4174', `/#h=${HID}`, 'v1-today');
   await shoot('http://localhost:4174', `/#h=${HID}`, 'v1-history', [tap('.tabbar button:has-text("History")')]);

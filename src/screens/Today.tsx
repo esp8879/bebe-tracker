@@ -139,9 +139,11 @@ export function Today() {
           <div className="stat"><span className="v">{s.bottles}</span><span className="k">bottle feeds</span></div>
           <div className="stat"><span className="v">{volValue(s.bottle_ml)}</span><span className="k">bottle {volLabel()}</span></div>
           <div className="stat"><span className="v">{volValue(s.pumped_ml)}</span><span className="k">pumped {volLabel()}</span></div>
-          <div className="stat"><span className="v">{s.diapers}</span><span className="k">diapers</span></div>
-          <div className="stat"><span className="v">{s.wet}</span><span className="k">wet</span></div>
-          <div className="stat"><span className="v">{s.dirty}</span><span className="k">dirty{stool ? ' · ' : ''}{stool && <span className="swatch" style={{ background: stool.swatch, verticalAlign: 'middle' }} />}</span></div>
+          {settings.diapers_enabled !== false && (<>
+            <div className="stat"><span className="v">{s.diapers}</span><span className="k">diapers</span></div>
+            <div className="stat"><span className="v">{s.wet}</span><span className="k">wet</span></div>
+            <div className="stat"><span className="v">{s.dirty}</span><span className="k">dirty{stool ? ' · ' : ''}{stool && <span className="swatch" style={{ background: stool.swatch, verticalAlign: 'middle' }} />}</span></div>
+          </>)}
         </div>
         <div className="muted small ellipsis">Bottles: {s.bottle_ml > 0
           ? [s.formula_ml > 0 && `${fmtMl(s.formula_ml, false)} formula`, s.breastmilk_bottle_ml > 0 && `${fmtMl(s.breastmilk_bottle_ml, false)} breast milk`].filter(Boolean).join(' · ')
