@@ -1,9 +1,20 @@
 import type { Entry, Med } from '../types';
 import { isActive } from './summary';
+import { localParts } from './time';
+
+export interface NightFeeds { enabled: boolean; interval_min?: number; start: string; end: string }
+const toMin = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return (h % 24) * 60 + (m || 0); };
+
+/** True when the instant falls inside the night window (household-local clock; the window may wrap midnight). */
+export function isNightAt(ms: number, night: NightFeeds): boolean {
+  const { hh, mm } = localParts(ms);
+  const t = hh * 60 + mm, s = toMin(night.start), e = toMin(night.end);
+  return s === e ? false : s < e ? t >= s && t < e : t >= s || t < e;
+}
 
 export type FeedStatus = 'ok' | 'due' | 'late';
 
-export interface FeedTimer { lastAt: number; dueAt: number; remainingMs: number; status: FeedStatus }
+export interface FeedTimer { lastAt: number; dueAt: number; remainingMs: number; status: FeedStatus; intervalMin: number; night: boolean }
 
 export function lastFeedAt(entries: Entry[]): number | null {
   let last: number | null = null;
@@ -11,14 +22,19 @@ export function lastFeedAt(entries: Entry[]): number | null {
   return last;
 }
 
-/** Amber at 0, red at +30 min. */
-export function nextFeedDue(entries: Entry[], intervalMin: number, now: number): FeedTimer | null {
+/**
+ * Amber at 0, red at +30 min. With a night schedule, the interval is picked by when the LAST feed
+ * started: a 7:30 PM feed uses the day interval even if the next one lands after night begins.
+ */
+export function nextFeedDue(entries: Entry[], dayIntervalMin: number, now: number, night?: NightFeeds): FeedTimer | null {
   const lastAt = lastFeedAt(entries);
   if (lastAt === null) return null;
+  const isNight = !!(night?.enabled && night.interval_min && night.interval_min > 0 && isNightAt(lastAt, night));
+  const intervalMin = isNight ? night!.interval_min! : dayIntervalMin;
   const dueAt = lastAt + intervalMin * 60_000;
   const remainingMs = dueAt - now;
   const status: FeedStatus = remainingMs > 0 ? 'ok' : remainingMs > -30 * 60_000 ? 'due' : 'late';
-  return { lastAt, dueAt, remainingMs, status };
+  return { lastAt, dueAt, remainingMs, status, intervalMin, night: isNight };
 }
 
 export interface MedTimer { med: Med; lastAt: number | null; okAt: number | null; remainingMs: number; ok: boolean }

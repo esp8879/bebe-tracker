@@ -93,6 +93,11 @@ const diaperSwitch = (label) => [tap('.tabbar button:has-text("Settings")'), tap
 await shoot(LIVE, `/h/${HID}`, 'settings-diapers', [...diaperSwitch('Off'), async (p) => { const y = await p.evaluate(() => [...document.querySelectorAll('h3')].find((h) => h.textContent === 'Meds').getBoundingClientRect().top + window.scrollY - 12); await p.evaluate((y) => window.scrollTo(0, y), y); }]);
 await shoot(LIVE, `/h/${HID}`, 'today-diapers-off', [tap('.tabbar button:has-text("Today")')]);
 await shoot(LIVE, `/h/${HID}`, 'diapers-back-on', [...diaperSwitch('Tracking diapers'), tap('.tabbar button:has-text("Today")')]);
+// Night feed schedule (demo household only): switch it on, shoot Settings and Today, switch it back off
+const nightSwitch = (label) => [tap('.tabbar button:has-text("Settings")'), tap(`.card:has(h3:text-is("Feed timer")) .seg button:has-text("${label}")`), async (p) => { await p.waitForTimeout(800); }];
+await shoot(LIVE, `/h/${HID}`, 'settings-feed-timer', [...nightSwitch('Different at night'), async (p) => { const y = await p.evaluate(() => [...document.querySelectorAll('h3')].find((h) => h.textContent === 'Feed timer').getBoundingClientRect().top + window.scrollY - 12); await p.evaluate((y) => window.scrollTo(0, y), y); }]);
+await shoot(LIVE, `/h/${HID}`, 'today-night', [tap('.tabbar button:has-text("Today")')]);
+await shoot(LIVE, `/h/${HID}`, 'night-back-off', [...nightSwitch('Same all day'), tap('.tabbar button:has-text("Today")')]);
 if (process.env.OLD) {
   await shoot('http://localhost:4174', `/#h=${HID}`, 'v1-today');
   await shoot('http://localhost:4174', `/#h=${HID}`, 'v1-history', [tap('.tabbar button:has-text("History")')]);

@@ -56,6 +56,8 @@ export interface Settings {
   /** ISO local wall-clock time of birth in America/New_York, e.g. 2026-01-15T14:32 */
   dob: string;
   feed_interval_min: number;
+  /** Optional night schedule: a feed that STARTS between `start` and `end` (household-local HH:MM, may wrap midnight) uses `interval_min` instead of `feed_interval_min`. */
+  night_feeds?: { enabled: boolean; interval_min?: number; start: string; end: string };
   med_intervals: Partial<Record<Med, number>>;
   /** Alternate Tylenol and Motrin: minimum minutes between any two doses of the pair. Off until set. */
   rotation: { enabled: boolean; stagger_min?: number };

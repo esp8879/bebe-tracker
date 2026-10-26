@@ -85,15 +85,15 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Release notes · Sep 12 – Oct 24, 2026</div>
+    <div class="eyebrow">Release notes · Sep 12 – Oct 26, 2026</div>
     <svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="110" fill="#12131a"/><circle cx="256" cy="256" r="172" fill="none" stroke="#ff9ac2" stroke-width="36"/><g transform="translate(124 124) scale(11)" fill="none" stroke="#ff9ac2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.25 5.5V4.5a1.75 1.75 0 0 1 3.5 0v1"/><rect x="8.75" y="5.5" width="6.5" height="2.75" rx="1"/><path d="M8.25 8.25h7.5v9.5a3 3 0 0 1-3 3h-1.5a3 3 0 0 1-3-3z"/><path d="M8.25 12h2.25M8.25 15h2.25"/></g></svg>
     <h1>bébé <span>tracker</span></h1>
     <p class="lede">A shared logbook for a newborn's feeds, diapers, pumping and mom's meds. Two phones, one live dataset, built for one-handed use at 3 am. This page follows how it changed over its first ten days.</p>
     <div class="facts">
-      <span><b>54</b> releases</span>
-      <span><b>43</b> days</span>
+      <span><b>55</b> releases</span>
+      <span><b>45</b> days</span>
       <span><b>5</b> tabs</span>
-      <span><b>32</b> automated tests</span>
+      <span><b>36</b> automated tests</span>
       <span>Live at <a href="https://bebe.fyi">bebe.fyi</a></span>
     </div>
   </header>
@@ -404,6 +404,22 @@
         <div class="shots">
           <figure class="phone"><div class="screen"><img src="shots/today-diapers-off.png" alt="Today with diaper tracking off: three tiles in Today so far and a greyed-out Diaper button in the dock." loading="lazy"></div><figcaption><b>Diapers off</b>One row of tiles, Diaper greyed out.</figcaption></figure>
           <figure class="phone"><div class="screen"><img src="shots/settings-diapers.png" alt="Settings: the Meds and Diapers cards, each with an on/off switch." loading="lazy"></div><figcaption><b>The switches</b>Meds and Diapers, side by side.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.17</div><div class="when">Mon Oct 26</div></div>
+      <div class="body">
+        <h2>Longer nights</h2>
+        <ul class="notes">
+          <li><b>A night interval for the feed timer.</b> Settings has a new Feed timer card: hours between feeds, and a "Different at night" switch with its own hours and when night starts and ends. Every three hours by day and four at night, say, from 9 PM to 6 AM.</li>
+          <li><b>It goes by when she last ate.</b> A 7:30 PM feed is a daytime feed, so the next one is due at 10:30 PM even though that's after nine. A feed that starts at 9 PM or later counts down the night hours. Today's feed line says which one it used: "Last feed 10:15 PM · night, 4h".</li>
+          <li><b>Hours, not minutes.</b> The feed interval moved out of the Baby card and is entered in hours, like the med and pump intervals.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/settings-feed-timer.png" alt="Settings: the Feed timer card with 3 hours between feeds, Different at night selected, 4 hours at night, and night from 9:00 PM to 6:00 AM." loading="lazy"></div><figcaption><b>Feed timer</b>Day hours, night hours, and when night is.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/today-night.png" alt="Today: the feed countdown with the line Last feed, day, 3h underneath." loading="lazy"></div><figcaption><b>Today</b>The feed line names the interval it used.</figcaption></figure>
         </div>
       </div>
     </article>

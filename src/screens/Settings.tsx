@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../data/store';
 import { useUI } from '../ui';
 import { shareUrl, joinHousehold } from '../household';
-import { MEDS, allMeds, type Settings as S, type Who } from '../types';
+import { MEDS, allMeds, type Who } from '../types';
 import { Field, Seg } from '../components/common';
 import { getTimezone, deviceTimezone } from '../lib/time';
 import { entriesToCsv, backupJson, deliverFile } from '../lib/export';
@@ -29,6 +29,14 @@ function MedInterval({ label, minutes, onSave }: { label: string; minutes: numbe
   );
 }
 
+/** "21:00" shifted by `deltaMin`, as "8:30 PM". */
+function fmtClock(hhmm: string, deltaMin: number): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const t = (((h * 60 + m + deltaMin) % 1440) + 1440) % 1440;
+  const hh = Math.floor(t / 60), mm = t % 60;
+  return `${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;
+}
+
 const TIMEZONES: string[] = (() => {
   try { const all = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone'); if (all?.length) return all; } catch { /* ignore */ }
   return ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Phoenix', 'America/Anchorage', 'Pacific/Honolulu', 'America/Toronto', 'America/Vancouver', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Asia/Tokyo', 'Australia/Sydney', 'UTC'];
@@ -43,8 +51,8 @@ export function Settings() {
   const [busy, setBusy] = useState<string | null>(null);
   const [doc, setDoc] = useState<{ title: string; src: string } | null>(null);
   const url = shareUrl(hid);
-  const num = (k: keyof S) => (v: string) => { const n = +v; if (!isNaN(n) && n > 0) void saveSettings({ [k]: n } as Partial<S>); };
   const tz = settings.tz ?? getTimezone();
+  const night = settings.night_feeds ?? { enabled: false, start: '21:00', end: '06:00' };
   const units = settings.units ?? { volume: 'ml', weight: 'lb' };
   const custom = settings.custom_meds ?? [];
   const meds = allMeds(custom).filter((m) => m.value !== 'other');
@@ -144,7 +152,24 @@ export function Settings() {
         <h3>Baby</h3>
         <TextSetting label="Name" value={settings.baby_name} onSave={(v) => void saveSettings({ baby_name: v || 'Baby' })} />
         <TextSetting label="Date & time of birth" type="datetime-local" value={settings.dob} onSave={(v) => v && void saveSettings({ dob: v })} />
-        <TextSetting label="Feed interval (minutes) — drives the next-feed timer" type="number" inputMode="numeric" value={String(settings.feed_interval_min)} onSave={num('feed_interval_min')} />
+      </div>
+
+      <div className="card">
+        <h3>Feed timer</h3>
+        <MedInterval key={`feed-${settings.feed_interval_min}`} label="Hours between feeds" minutes={settings.feed_interval_min} onSave={(h) => { const n = parseFloat(h); if (h && !isNaN(n) && n > 0) void saveSettings({ feed_interval_min: Math.round(n * 60) }); }} />
+        <Seg<'same' | 'night'> options={[{ value: 'same', label: 'Same all day' }, { value: 'night', label: 'Different at night' }]} value={night.enabled ? 'night' : 'same'} onChange={(v) => void saveSettings({ night_feeds: { ...night, enabled: v === 'night' } })} />
+        {night.enabled ? (
+          <>
+            <MedInterval key={`night-${night.interval_min ?? ''}`} label="Hours between feeds at night" minutes={night.interval_min} onSave={(h) => { const n = parseFloat(h); void saveSettings({ night_feeds: { ...night, interval_min: !h || isNaN(n) || n <= 0 ? undefined : Math.round(n * 60) } }); }} />
+            <div className="night-times">
+              <TextSetting key={`ns-${night.start}`} label="Night starts" type="time" value={night.start} onSave={(v) => v && void saveSettings({ night_feeds: { ...night, start: v } })} />
+              <TextSetting key={`ne-${night.end}`} label="Night ends" type="time" value={night.end} onSave={(v) => v && void saveSettings({ night_feeds: { ...night, end: v } })} />
+            </div>
+            <div className="muted small">The interval follows when the last feed <b>started</b>: a feed at {fmtClock(night.start, -30)} counts down the day hours, one at {fmtClock(night.start, 0)} the night hours.{!night.interval_min && ' Enter night hours to turn it on.'}</div>
+          </>
+        ) : (
+          <div className="muted small">Today counts down from the last feed. Switch to "Different at night" if nights run on a longer stretch.</div>
+        )}
       </div>
 
       <div className="card">

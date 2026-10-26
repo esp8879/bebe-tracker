@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { nextFeedDue, medTimer, rotationNext, pumpTimer, recentDoses } from './timers';
+import { nextFeedDue, medTimer, rotationNext, pumpTimer, recentDoses, isNightAt } from './timers';
+import { fromNYLocal, setTimezone } from './time';
 import type { Entry } from '../types';
 
 const feed = (at: number, deleted = false): Entry =>
@@ -96,5 +97,40 @@ describe('recentDoses', () => {
     const old: Entry = { ...dose(now - 8 * D, 'tylenol') };
     const del: Entry = { ...dose(now - 1 * H, 'motrin'), deleted_at: now };
     expect(recentDoses([old, del], now, 7)).toEqual([]);
+  });
+});
+
+describe('night feed schedule', () => {
+  setTimezone('America/New_York');
+  const night = { enabled: true, interval_min: 240, start: '21:00', end: '06:00' };
+  const at = (hh: number, mm: number, d = 20) => fromNYLocal(2026, 10, d, hh, mm);
+  it('picks the window by the clock time, wrapping midnight', () => {
+    expect(isNightAt(at(20, 59), night)).toBe(false);
+    expect(isNightAt(at(21, 0), night)).toBe(true);
+    expect(isNightAt(at(0, 30), night)).toBe(true);
+    expect(isNightAt(at(5, 59), night)).toBe(true);
+    expect(isNightAt(at(6, 0), night)).toBe(false);
+  });
+  it('uses the interval of the last feed, not of the due time', () => {
+    const evening = nextFeedDue([feed(at(19, 30))], 180, at(19, 31), night)!;
+    expect(evening.night).toBe(false);
+    expect(evening.dueAt).toBe(at(22, 30));
+    const late = nextFeedDue([feed(at(21, 0))], 180, at(21, 1), night)!;
+    expect(late.night).toBe(true);
+    expect(late.dueAt).toBe(at(1, 0, 21));
+    const dawn = nextFeedDue([feed(at(5, 59))], 180, at(6, 0), night)!;
+    expect(dawn.intervalMin).toBe(240);
+  });
+  it('falls back to the day interval when off or blank', () => {
+    expect(nextFeedDue([feed(at(23, 0))], 180, at(23, 1), { ...night, enabled: false })!.intervalMin).toBe(180);
+    expect(nextFeedDue([feed(at(23, 0))], 180, at(23, 1), { ...night, interval_min: undefined })!.intervalMin).toBe(180);
+    expect(nextFeedDue([feed(at(23, 0))], 180, at(23, 1))!.night).toBe(false);
+  });
+  it('holds across the fall-back clock change', () => {
+    // Nov 1 2026, 1:00 AM EDT: a 4h night interval is 4 real hours even though the clock repeats an hour.
+    const t = fromNYLocal(2026, 11, 1, 0, 30);
+    const f = nextFeedDue([feed(t)], 180, t + 60_000, night)!;
+    expect(f.night).toBe(true);
+    expect(f.dueAt - t).toBe(4 * H);
   });
 });

@@ -18,7 +18,8 @@ export function Today() {
   const today = dayOf(now);
   const dob = parseNYLocal(settings.dob);
   const age = ageAt(dob, now);
-  const feed = nextFeedDue(entries, settings.feed_interval_min, now);
+  const feed = nextFeedDue(entries, settings.feed_interval_min, now, settings.night_feeds);
+  const nightOn = !!(settings.night_feeds?.enabled && settings.night_feeds.interval_min);
   const medsOn = settings.meds_enabled !== false;
   const lastMode = settings.today_mode === 'last';
   const rotationOn = !lastMode && settings.rotation.enabled && !!settings.rotation.stagger_min;
@@ -61,7 +62,7 @@ export function Today() {
           <span className="ico t-feed"><Icon name="feed" /></span>
           <span className="grow">
             <span className={feedClass}>{feedLine}</span>
-            <span className="sub">{feed ? `Last feed ${fmtTime(feed.lastAt)}` : 'Tap to log the first feed'}</span>
+            <span className="sub">{feed ? `Last feed ${fmtTime(feed.lastAt)}${nightOn ? ` · ${feed.night ? 'night' : 'day'}, ${fmtDur(feed.intervalMin * 60_000)}` : ''}` : 'Tap to log the first feed'}</span>
           </span>
           {feed?.status === 'ok' && <span className="due">{fmtTime(feed.dueAt)}</span>}
         </button>
