@@ -151,6 +151,10 @@ table.summary td.expand { padding: 0; text-align: left; white-space: normal; }
 .screen.today.roomy .card.compact { padding: 10px 12px; gap: 7px; }
 .screen.today.roomy .card.compact .stat { padding: 5px 10px; }
 .screen.today.roomy .duo .card { padding: 8px 12px; gap: 4px; }
+.screen.today.roomy.snug { gap: 6px; }
+.screen.today.roomy.snug .card.timers.hero .timer { padding: 4px 6px; }
+.screen.today.roomy.snug .card.compact { padding: 8px 12px; gap: 5px; }
+.screen.today.roomy.snug .card.compact .stat { padding: 4px 10px; }
 .timer { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; color: var(--text); text-align: left; padding: 3px 6px; font-size: 19px; font-weight: 700; border-bottom: 1px solid var(--border); }
 .timer .grow { display: flex; flex-direction: column; gap: 0; min-width: 0; }
 .timer .grow > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

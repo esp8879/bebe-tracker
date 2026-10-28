@@ -88,3 +88,15 @@ export function isBedtime(entries: Entry[], at: number, ignoreId?: string): bool
   const key = nightKey(at);
   return !sleepsOf(entries).some((s) => s.id !== ignoreId && s.night && nightKey(s.at) === key && s.at < at);
 }
+
+/**
+ * The night Today's "longest" tile should show: tonight while the night window is on and she has slept tonight,
+ * otherwise the most recent night that has ended.
+ */
+export function nightForToday(entries: Entry[], now: number, window = DEFAULT_NIGHT_SLEEP): { key: string; tonight: boolean } {
+  const key0 = nightKey(now);
+  const has = (k: string) => sleepsOf(entries).some((s) => s.night && nightKey(s.at) === k);
+  if (has(key0)) return { key: key0, tonight: isNightAt(now, window) };
+  const [y, m, d] = key0.split('-').map(Number);
+  return { key: dayOf(fromLocal(y, m, d - 1, 12, 0)), tonight: false };
+}

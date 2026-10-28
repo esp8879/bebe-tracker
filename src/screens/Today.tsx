@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { useStore } from '../data/store';
 import { useUI } from '../ui';
 import { useNav } from '../App';
@@ -8,8 +9,21 @@ import { summaryForDay } from '../lib/summary';
 import { MEDS, STOOL_COLORS, medLabel, allMeds, type Med } from '../types';
 import { volValue, volLabel, fmtMl, fmtWeight, fmtPct, pctChange } from '../lib/units';
 import { WeightChart } from '../components/WeightChart';
-import { openSleep, lastWake, sleepMsOnDay, napsOnDay, nightStats, latestNightKey } from '../lib/sleep';
+import { openSleep, lastWake, sleepMsOnDay, napsOnDay, nightStats, nightForToday, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
 import { Icon } from '../components/Icon';
+
+/** One line of text that steps its font size down until it fits its box, so the appointment date never wraps. */
+function FitLine({ children, max, min, style }: { children: string; max: number; min: number; style?: CSSProperties }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState(max);
+  useLayoutEffect(() => { setSize(max); }, [children, max]);
+  useLayoutEffect(() => { const on = () => setSize(max); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, [max]);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (el && size > min && el.scrollWidth > el.clientWidth) setSize((s) => s - 1);
+  }, [size, min, children]);
+  return <div ref={ref} className="ellipsis" style={{ ...style, fontSize: size }}>{children}</div>;
+}
 
 export function Today() {
   const { entries, settings, pending, stuck, online, appointments, weights, demo } = useStore();
@@ -37,8 +51,8 @@ export function Today() {
   const woke = sleepOn && !asleep ? lastWake(entries) : null;
   const naps = sleepOn ? napsOnDay(entries, today) : 0;
   const sleptToday = sleepOn ? sleepMsOnDay(entries, today, now) : 0;
-  const lastNight = sleepOn ? latestNightKey(entries) : null;
-  const night = lastNight ? nightStats(entries, lastNight, now) : null;
+  const nightPick = sleepOn ? nightForToday(entries, now, settings.night_sleep ?? DEFAULT_NIGHT_SLEEP) : null;
+  const night = nightPick ? nightStats(entries, nightPick.key, now) : null;
   const stale = !!asleep && now - asleep.at > 12 * 3_600_000;
   const stool = s.last_stool ? STOOL_COLORS.find((c) => c.value === s.last_stool) : undefined;
   const lastW = weights[weights.length - 1];
@@ -52,7 +66,9 @@ export function Today() {
   // With sleep on, more than one med row folds into a single row (see the meds card) so Today stays at four rows at most.
   const compactMeds = sleepOn && medRows > 1;
   const timerRows = 2 + (sleepOn ? 1 : 0) + (compactMeds ? 1 : medRows);
-  const roomy = timerRows <= 3 && !(sleepOn && settings.diapers_enabled !== false);
+  const roomy = timerRows <= 3;
+  // Roomy rows but with the extra diaper line under the tiles: a little less air so it still fits.
+  const snug = roomy && sleepOn && settings.diapers_enabled !== false;
   const feedLine = !feed ? 'No feeds logged yet'
     : feed.status === 'ok' ? `Feed in ${fmtDur(feed.remainingMs)}`
     : feed.status === 'due' ? `Feed due · ${fmtDur(-feed.remainingMs)} ago`
@@ -60,7 +76,7 @@ export function Today() {
   const feedClass = !feed || feed.status === 'ok' ? '' : feed.status === 'due' ? 'amber' : 'red';
 
   return (
-    <div className={`screen today${roomy ? ' roomy' : ''}`}>
+    <div className={`screen today${roomy ? ' roomy' : ''}${snug ? ' snug' : ''}`}>
       <div className="row">
         <h1 style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>{settings.baby_name} <span className="muted small" style={{ fontWeight: 500 }}>Day {ageDaysOnDay(dob, today)} · {age.days}d {age.hours}h old</span></h1>
         <div className="stack" style={{ alignItems: 'flex-end', gap: 2 }}>
@@ -192,7 +208,7 @@ export function Today() {
           {sleepOn && (<>
             <div className="stat"><span className="v">{fmtDur(sleptToday)}</span><span className="k">sleep today</span></div>
             <div className="stat"><span className="v">{naps}</span><span className="k">{naps === 1 ? 'nap' : 'naps'}</span></div>
-            <div className="stat"><span className="v">{night && night.longestMs ? fmtDur(night.longestMs) : '—'}</span><span className="k">longest night</span></div>
+            <div className="stat"><span className="v">{night && night.longestMs ? fmtDur(night.longestMs) : '—'}</span><span className="k">{nightPick?.tonight ? 'tonight max' : 'last night max'}</span></div>
           </>)}
           {settings.diapers_enabled !== false && !sleepOn && (<>
             <div className="stat"><span className="v">{s.diapers}</span><span className="k">diapers</span></div>
@@ -224,7 +240,7 @@ export function Today() {
           <h3>Next appt</h3>
           {nextAppt ? (
             <>
-              <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.15, textWrap: 'balance' }}>{fmtWhen(nextAppt.at, now)}</div>
+              <FitLine max={20} min={15} style={{ fontWeight: 700, lineHeight: 1.15 }}>{fmtWhen(nextAppt.at, now)}</FitLine>
               <div className="ellipsis" style={{ fontSize: 16, fontWeight: 600 }}>{nextAppt.location || nextAppt.title}</div>
               {nextAppt.location && <div className="small ellipsis" style={{ fontWeight: 600 }}>{nextAppt.title}</div>}
               {timerRows <= 2 && nextAppt.at - now < 24 * 3_600_000 && <div className="muted small ellipsis">{nextAppt.at > now ? `in ${fmtDur(nextAppt.at - now)}` : `started ${fmtDur(now - nextAppt.at)} ago`}</div>}

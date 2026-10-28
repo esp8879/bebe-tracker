@@ -21,7 +21,7 @@ function DaysView() {
   const dob = parseNYLocal(settings.dob);
   const diapers = settings.diapers_enabled !== false;
   const sleepOn = settings.sleep_enabled !== false;
-  const cols = 9 + (sleepOn ? 4 : 0) + (diapers ? 4 : 0);
+  const cols = 8 + (sleepOn ? 4 : 0) + (diapers ? 4 : 0);
   const now = Date.now();
   return (
     <div className="card" style={{ padding: 0 }}>
@@ -29,7 +29,7 @@ function DaysView() {
         <table className="summary">
           <thead>
             <tr>
-              <th>Day</th><th>Age</th><th>Feeds</th><th>Breast</th><th>Bottle {volLabel()}</th><th>Formula {volLabel()}</th><th>BM {volLabel()}</th><th>Pumps</th><th>Pumped {volLabel()}</th>{sleepOn && <><th>Sleep</th><th>Naps</th><th>Night</th><th>Bedtime</th></>}{diapers && <><th>Diapers</th><th>Wet</th><th>Dirty</th><th>Stool</th></>}
+              <th>Day</th><th>Age</th><th>Feeds</th><th>Total {volLabel()}</th><th>Formula {volLabel()}</th><th>BM {volLabel()}</th><th>Pumps</th><th>Pumped {volLabel()}</th>{sleepOn && <><th>Sleep</th><th>Naps</th><th>Night</th><th>Bedtime</th></>}{diapers && <><th>Diapers</th><th>Wet</th><th>Dirty</th><th>Stool</th></>}
             </tr>
           </thead>
           <tbody>
@@ -41,7 +41,6 @@ function DaysView() {
                   <td>{fmtShortDay(d.day)}</td>
                   <td>{ageDaysOnDay(dob, d.day)}d</td>
                   <td>{d.bottles}</td>
-                  <td>{d.breast || ""}</td>
                   <td>{d.bottle_ml ? volValue(d.bottle_ml) : '—'}</td>
                   <td>{d.formula_ml ? volValue(d.formula_ml) : '—'}</td>
                   <td>{d.breastmilk_bottle_ml ? volValue(d.breastmilk_bottle_ml) : '—'}</td>

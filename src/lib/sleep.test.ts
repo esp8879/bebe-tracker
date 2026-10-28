@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Entry, Sleep } from '../types';
 import { fromNYLocal, setTimezone } from './time';
-import { openSleep, lastWake, nightKey, sleepMsOnDay, napsOnDay, nightStats, latestNightKey, isBedtime, isNightSleepAt } from './sleep';
+import { openSleep, lastWake, nightKey, sleepMsOnDay, napsOnDay, nightStats, latestNightKey, isBedtime, isNightSleepAt, nightForToday } from './sleep';
 
 setTimezone('America/New_York');
 const H = 3_600_000, M = 60_000;
@@ -46,5 +46,17 @@ describe('sleep', () => {
     expect(latestNightKey(list)).toBe('2026-10-20');
     expect(isBedtime(list, at(20, 19, 0))).toBe(true);
     expect(isBedtime(list, at(20, 23, 0))).toBe(false);
+  });
+});
+
+describe('nightForToday', () => {
+  const list = [sleep(at(20, 19, 10), at(20, 22, 0), true), sleep(at(20, 23, 0), at(21, 4, 0), true), sleep(at(21, 19, 30), null, true)];
+  it('shows last night in the morning and afternoon', () => {
+    expect(nightForToday(list.slice(0, 2), at(21, 9))).toEqual({ key: '2026-10-20', tonight: false });
+    expect(nightForToday(list.slice(0, 2), at(21, 15))).toEqual({ key: '2026-10-20', tonight: false });
+  });
+  it('switches to tonight once she has slept tonight', () => {
+    expect(nightForToday(list.slice(0, 2), at(21, 20))).toEqual({ key: '2026-10-20', tonight: false });
+    expect(nightForToday(list, at(21, 20))).toEqual({ key: '2026-10-21', tonight: true });
   });
 });
