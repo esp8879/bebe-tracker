@@ -5,9 +5,8 @@ import { fmtDur, fromLocal } from '../lib/time';
 import {
   DEFAULT_NIGHT_SLEEP, currentNight, lastCompletedNight, nightsBack, nightKey, nightStats, sleepsOf, weekSummary, fmtEveningMinutes, loggedNights,
 } from '../lib/sleep';
-import type { SleepHow } from '../types';
+import { SLEEP_HOW_LABEL } from '../types';
 
-const SHORT_HOW: Record<SleepHow, string> = { feeding: 'fed', rocking: 'rocked', held: 'held', pacifier: 'pacifier', own: 'on her own' };
 const SPAN_START_H = 18, SPAN_H = 14; // each row runs 6 PM to 8 AM
 const TICKS = [{ h: 0, label: '6p' }, { h: 3, label: '9p' }, { h: 6, label: '12a' }, { h: 9, label: '3a' }, { h: 12, label: '6a' }];
 
@@ -60,7 +59,7 @@ export function SleepDiary() {
           const inRow = sleeps.filter((s) => s.at < span[1] && (s.end_at ?? now) > span[0]);
           const dots = feeds.filter((f) => f.at >= span[0] && f.at <= span[1] && f.at <= now);
           const first = sleeps.find((s) => s.night && nightKey(s.at) === key);
-          const how = first?.how?.map((h) => SHORT_HOW[h]).join(' + ');
+          const how = first?.how?.map((h) => SLEEP_HOW_LABEL[h] ?? h).join(' + ');
           return (
             <div key={key} className="diary-row">
               <div className="diary-label">

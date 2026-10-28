@@ -47,12 +47,15 @@ export interface MomMed extends Base {
   med: Med;
   dose_text?: string;
 }
-/** What was happening as she fell asleep. 'own' excludes the others. */
-export type SleepHow = 'feeding' | 'rocking' | 'held' | 'pacifier' | 'own';
+/**
+ * Help she had falling asleep; none = on her own. Feeding isn't offered (she always goes down after a feed);
+ * 'feeding' and 'own' remain only so sleeps logged before 2026-10-28 still read correctly.
+ */
+export type SleepHow = 'held' | 'rocking' | 'pacifier' | 'bjorn' | 'feeding' | 'own';
 export const SLEEP_HOW: { value: SleepHow; label: string }[] = [
-  { value: 'feeding', label: 'Feeding' }, { value: 'rocking', label: 'Rocking' }, { value: 'held', label: 'Held' },
-  { value: 'pacifier', label: 'Pacifier' }, { value: 'own', label: 'On her own' },
+  { value: 'held', label: 'Held' }, { value: 'rocking', label: 'Rocked' }, { value: 'pacifier', label: 'Pacifier' }, { value: 'bjorn', label: 'Baby Björn' },
 ];
+export const SLEEP_HOW_LABEL: Record<SleepHow, string> = { held: 'held', rocking: 'rocked', pacifier: 'pacifier', bjorn: 'Björn', feeding: 'fed', own: 'on her own' };
 /** A sleep runs from `at` (fell asleep) to `end_at` (woke up); `end_at` is null while she's asleep. */
 export interface Sleep extends Base {
   type: 'sleep';

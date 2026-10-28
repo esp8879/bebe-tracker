@@ -53,7 +53,7 @@ for (let back = 14; back >= 1; back--) {
   const bed = sleepAt(back, 19, 45) - Math.round(35 * t) * M;
   const first = bed + (135 + Math.round(85 * t)) * M;
   const nf = [bed - 20 * M];
-  S.push([bed, first, true, back % 3 === 0 ? ['feeding', 'rocking'] : back % 3 === 1 ? ['feeding'] : ['rocking', 'pacifier']]);
+  S.push([bed, first, true, back % 4 === 0 ? ['rocking'] : back % 4 === 1 ? ['held', 'pacifier'] : back % 4 === 2 ? ['bjorn'] : undefined]);
   let t0 = first + 30 * M;
   nf.push(first + 5 * M);
   for (const len of back > 7 ? [125, 115, 120] : [240, 150]) {
@@ -105,4 +105,6 @@ for (const [i, [daysAfterBirth, grams, source]] of [[0, 3289, 'hospital'], [2, 3
   const at = now - (18 - daysAfterBirth) * 86_400_000 - 3 * 3_600_000;
   await put('weights', `w${i}`, { at, day: dayOf(at), grams, source, created_at: at, updated_at: at, deleted_at: null });
 }
+// Remove leftovers from an earlier, longer seed so stale demo entries don't linger.
+for (let i = n; i < n + 40; i++) await fetch(`${BASE}/entries/demo-${String(i).padStart(3, '0')}`, { method: 'DELETE', headers: { Authorization: `Bearer ${tok}` } });
 console.log(`seeded ${E.length} entries into ${HID}`);

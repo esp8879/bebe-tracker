@@ -60,7 +60,7 @@ export function demoData(now = Date.now()): { settings: Settings; entries: Entry
     const bed = at(back, 19, 45) - Math.round(35 * t) * M;
     const first = bed + (135 + Math.round(85 * t)) * M;
     const nightFeedsAt: number[] = [bed - 20 * M];
-    sleeps.push([bed, first, true, back % 3 === 0 ? ['feeding', 'rocking'] : back % 3 === 1 ? ['feeding'] : ['rocking', 'pacifier']]);
+    sleeps.push([bed, first, true, back % 4 === 0 ? ['rocking'] : back % 4 === 1 ? ['held', 'pacifier'] : back % 4 === 2 ? ['bjorn'] : undefined]);
     let t0 = first + 30 * M;
     nightFeedsAt.push(first + 5 * M);
     const chunks = back > 7 ? [125, 115, 120] : [240, 150];
