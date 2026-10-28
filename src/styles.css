@@ -3,7 +3,7 @@
   --text: #eef0f6; --muted: #9ba0b8; --accent: #ff9ac2; --accent-ink: #2b0f1d;
   --amber: #f0b35b; --red: #ff6b6b; --green: #5fd39a; --chart: #8fa8ff;
   /* per-type tints: on glyphs only, never on text or fills */
-  --t-feed: #8fa8ff; --t-diaper: #7cd0e0; --t-pump: #cfa2f2; --t-mom_med: #f0b35b;
+  --t-feed: #8fa8ff; --t-diaper: #7cd0e0; --t-pump: #cfa2f2; --t-mom_med: #f0b35b; --t-sleep: #e8d49b;
   --r-ctl: 12px; --r-card: 16px; --tab-h: 60px;
   color-scheme: dark;
 }
@@ -12,7 +12,7 @@
 .wordmark span { color: var(--accent); }
 .wordmark.small { font-size: 14px; letter-spacing: 0; }
 .ico { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ico.t-feed { color: var(--t-feed); } .ico.t-diaper { color: var(--t-diaper); } .ico.t-pump { color: var(--t-pump); } .ico.t-mom_med { color: var(--t-mom_med); }
+.ico.t-feed { color: var(--t-feed); } .ico.t-diaper { color: var(--t-diaper); } .ico.t-pump { color: var(--t-pump); } .ico.t-mom_med { color: var(--t-mom_med); } .ico.t-sleep { color: var(--t-sleep); }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
 /* iOS 26 home-screen apps blur a band reaching ~40pt below the status bar; screens start below it (padding-top above). */
@@ -147,7 +147,7 @@ table.summary td.expand { padding: 0; text-align: left; white-space: normal; }
 .screen.today.roomy { gap: 8px; }
 .screen.today.roomy .card.timers { padding: 2px 8px; }
 .screen.today.roomy .timer { padding: 6px 6px; font-size: 20px; }
-.screen.today.roomy .card.timers.hero .timer { padding: 9px 6px; font-size: 22px; }
+.screen.today.roomy .card.timers.hero .timer { padding: 7px 6px; font-size: 22px; }
 .screen.today.roomy .card.compact { padding: 10px 12px; gap: 7px; }
 .screen.today.roomy .card.compact .stat { padding: 5px 10px; }
 .screen.today.roomy .duo .card { padding: 8px 12px; gap: 4px; }
@@ -165,6 +165,8 @@ table.summary td.expand { padding: 0; text-align: left; white-space: normal; }
 .dock button { border: 0; border-radius: var(--r-ctl); background: var(--card2); color: var(--text); height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 13px; font-weight: 700; box-shadow: 0 4px 16px rgba(0,0,0,.35); }
 .dock button:active { filter: brightness(1.2); }
 .dock button.off { opacity: .35; box-shadow: none; }
+/* While she's asleep the Sleep button becomes Woke up: one tap ends the sleep */
+.dock button.asleep { background: var(--card); outline: 1.5px solid var(--t-sleep); outline-offset: -1.5px; }
 .dock button.off:active { filter: none; }
 .dock button .ico { height: 24px; }
 

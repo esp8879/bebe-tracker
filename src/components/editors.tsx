@@ -4,8 +4,10 @@ import { useUI, type EditorState } from '../ui';
 import {
   FEED_KINDS, STOOL_COLORS, STOOL_AMOUNTS, label,
   type Feed, type Diaper, type Pump, type MomMed, type Entry,
-  type FeedKind, type Side, type Latch, type StoolColor, type StoolAmount, type Med,
+  type FeedKind, type Side, type Latch, type StoolColor, type StoolAmount, type Med, type Sleep, type SleepHow, SLEEP_HOW,
 } from '../types';
+import { isNightSleepAt, isBedtime, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
+import { fmtDur } from '../lib/time';
 import { Sheet, Chips, Seg, Field, NumberPick, TimeField, NotesField } from './common';
 import { volumeUnit, mlToOz, ozToMl } from '../lib/units';
 import { allMeds } from '../types';
@@ -163,6 +165,48 @@ export function MedEditor({ entry, preset }: { entry?: MomMed; preset?: { med?: 
   );
 }
 
+export function SleepEditor({ entry }: { entry?: Sleep }) {
+  const b = useEditorBase(entry);
+  const { entries, settings } = useStore();
+  const window = settings.night_sleep ?? DEFAULT_NIGHT_SLEEP;
+  const [nightTouched, setNightTouched] = useState(!!entry);
+  const [nightPick, setNight] = useState<boolean>(entry?.night ?? isNightSleepAt(b.at, window));
+  const night = nightTouched ? nightPick : isNightSleepAt(b.at, window);
+  const [how, setHow] = useState<SleepHow[]>(entry?.how ?? []);
+  const [endAt, setEndAt] = useState<number | null>(entry?.end_at ?? null);
+  // Ask how she fell asleep only at bedtime (the first night sleep of an evening), or when editing one that has it.
+  const askHow = (entry && (entry.how?.length || entry.night)) || (night && isBedtime(entries, b.at, entry?.id));
+  const toggleHow = (h: SleepHow) => setHow((cur) => h === 'own' ? (cur.includes('own') ? [] : ['own'])
+    : cur.includes(h) ? cur.filter((x) => x !== h) : [...cur.filter((x) => x !== 'own'), h]);
+  const bad = endAt != null && endAt <= b.at;
+  const save = (end = endAt) => b.save({ type: 'sleep', night, how: how.length ? how : undefined, end_at: end });
+  return (
+    <Sheet title={b.editing ? (entry?.end_at == null ? 'Asleep' : 'Edit sleep') : 'Sleep'} onClose={b.close}>
+      <TimeField value={b.at} onChange={b.setAt} label="Fell asleep" />
+      <Seg options={[{ value: 'nap', label: 'Nap' }, { value: 'night', label: 'Night' }]} value={night ? 'night' : 'nap'} onChange={(v) => { setNightTouched(true); setNight(v === 'night'); }} />
+      {askHow && (
+        <Field label="How she fell asleep (optional)">
+          <div className="chips">
+            {SLEEP_HOW.map((o) => <button key={o.value} type="button" className={`chip${how.includes(o.value) ? ' on' : ''}`} aria-pressed={how.includes(o.value)} onClick={() => toggleHow(o.value)}>{o.label}</button>)}
+          </div>
+        </Field>
+      )}
+      {endAt != null ? (
+        <>
+          <TimeField value={endAt} onChange={setEndAt} label="Woke up" />
+          {bad ? <div className="red small">Woke up has to be after she fell asleep.</div> : <div className="muted small">Slept {fmtDur(endAt - b.at)}</div>}
+        </>
+      ) : b.editing ? (
+        <button type="button" className="btn block" onClick={() => save(Date.now())}>Woke up now</button>
+      ) : (
+        <button type="button" className="btn ghost" style={{ alignSelf: 'flex-start', minHeight: 0, padding: 0 }} onClick={() => setEndAt(Date.now())}>Already awake? Add when she woke</button>
+      )}
+      {b.editing && <NotesField value={b.notes} onChange={b.setNotes} />}
+      <Actions onSave={() => save()} onDelete={b.editing ? b.del : undefined} disabled={bad} saveLabel={b.editing ? 'Save' : endAt != null ? 'Save sleep' : 'Start sleep'} />
+    </Sheet>
+  );
+}
+
 export function Editor({ state }: { state: EditorState }) {
   const { type, entry, preset } = state;
   switch (type) {
@@ -170,5 +214,6 @@ export function Editor({ state }: { state: EditorState }) {
     case 'diaper': return <DiaperEditor entry={entry as Diaper | undefined} />;
     case 'pump': return <PumpEditor entry={entry as Pump | undefined} />;
     case 'mom_med': return <MedEditor entry={entry as MomMed | undefined} preset={preset} />;
+    case 'sleep': return <SleepEditor entry={entry as Sleep | undefined} />;
   }
 }

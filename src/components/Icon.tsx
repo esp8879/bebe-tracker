@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
  * bottle in the app mark. Tab icons take `filled` for their active state. Colour comes from
  * `currentColor`; wrap in a `.ico` span with a `t-<type>` class for the per-type tint.
  */
-export type IconName = 'feed' | 'diaper' | 'pump' | 'mom_med' | 'today' | 'summary' | 'weight' | 'appointments' | 'settings';
+export type IconName = 'feed' | 'diaper' | 'pump' | 'mom_med' | 'sleep' | 'today' | 'summary' | 'weight' | 'appointments' | 'settings';
 
 const GLYPHS: Record<IconName, (filled: boolean) => ReactNode> = {
   feed: () => (
@@ -34,6 +34,9 @@ const GLYPHS: Record<IconName, (filled: boolean) => ReactNode> = {
       <rect x="3.5" y="8.5" width="17" height="7" rx="3.5" />
       <path d="M12 8.5v7" />
     </g>
+  ),
+  sleep: () => (
+    <path d="M19.5 14.25A7.75 7.75 0 1 1 9.75 4.5a6.25 6.25 0 0 0 9.75 9.75z" />
   ),
   today: (filled) => (
     <>

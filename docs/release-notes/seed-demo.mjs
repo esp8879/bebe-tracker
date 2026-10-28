@@ -8,6 +8,7 @@ const fv = (v) => v === null || v === undefined ? { nullValue: null }
   : typeof v === 'boolean' ? { booleanValue: v }
   : typeof v === 'number' ? (Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v })
   : typeof v === 'string' ? { stringValue: v }
+  : Array.isArray(v) ? { arrayValue: { values: v.map(fv) } }
   : { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fv(x)])) } };
 const put = async (path, id, data) => {
   const r = await fetch(`${BASE}/${path}/${id}`, { method: 'PATCH', headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: Object.fromEntries(Object.entries(data).map(([k, x]) => [k, fv(x)])) }) });
@@ -44,6 +45,23 @@ for (const [ymd, wetN] of [[[y2, m2, d2], 6], [[y1, m1, d1], 7]]) {
   med(ny(yy, mm, d, 10, 0), 'motrin', '600 mg'); med(ny(yy, mm, d, 13, 0), 'tylenol', '650 mg'); med(ny(yy, mm, d, 16, 0), 'motrin', '600 mg');
   med(ny(yy, mm, d, 9, 0), 'lovenox', '40 mg'); med(ny(yy, mm, d, 9, 5), 'stool_softener');
 }
+// Sleep: three nights where the first stretch slowly lengthens, plus naps. Nothing in the future.
+const sleepAt = (back, hh, mm) => { const [y, m, d] = dayBack(back); return ny(y, m, d, hh, mm); };
+const S = [];
+for (const [back, fh, fm] of [[3, 21, 50], [2, 22, 5], [1, 22, 30]]) {
+  S.push([sleepAt(back, 19, 10), sleepAt(back, fh, fm), true, back === 1 ? ['feeding', 'rocking'] : ['feeding']]);
+  S.push([sleepAt(back, 22, 55), sleepAt(back - 1, 3, 0), true]);
+  S.push([sleepAt(back - 1, 3, 35), sleepAt(back - 1, 6, 20), true]);
+  if (back < 3) for (const [h1, m1, h2, m2] of [[9, 0, 10, 15], [12, 30, 14, 0], [16, 0, 17, 0]]) S.push([sleepAt(back, h1, m1), sleepAt(back, h2, m2), false]);
+}
+let lastEnd = 0;
+for (const [start, end, night, how] of S.sort((a, b) => a[0] - b[0])) {
+  if (end > now - 10 * M) continue;
+  E.push({ type: 'sleep', end_at: end, night, ...(how ? { how } : {}), ...base(start, night ? 'mom' : 'dad') });
+  lastEnd = Math.max(lastEnd, end);
+}
+if (lastEnd < now - 2 * H - 10 * M) E.push({ type: 'sleep', end_at: now - 50 * M, night: false, ...base(now - 2 * H, 'dad') });
+
 // Today: anchored to "now" so timers look live whenever the screenshot is taken
 feed(now - 6 * H - 20 * M, 'bottle_formula', { volume_ml: 60 }, 'dad');
 diaper(now - 6 * H - 10 * M, true, false);

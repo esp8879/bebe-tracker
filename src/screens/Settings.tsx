@@ -8,6 +8,7 @@ import { getTimezone, deviceTimezone } from '../lib/time';
 import { entriesToCsv, backupJson, deliverFile } from '../lib/export';
 import { FEEDBACK_EMAIL, GUIDE_URL, NOTES_URL } from '../config';
 import { DocViewer } from '../components/DocViewer';
+import { DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
 
 function TextSetting({ label, value, onSave, type = 'text', inputMode }: { label: string; value: string; onSave: (v: string) => void; type?: string; inputMode?: 'numeric' | 'decimal' | 'text' }) {
   const [v, setV] = useState(value);
@@ -53,6 +54,7 @@ export function Settings() {
   const url = shareUrl(hid);
   const tz = settings.tz ?? getTimezone();
   const night = settings.night_feeds ?? { enabled: false, start: '21:00', end: '06:00' };
+  const sleepWin = settings.night_sleep ?? DEFAULT_NIGHT_SLEEP;
   const units = settings.units ?? { volume: 'ml', weight: 'lb' };
   const custom = settings.custom_meds ?? [];
   const meds = allMeds(custom).filter((m) => m.value !== 'other');
@@ -195,6 +197,22 @@ export function Settings() {
         <div className="muted small">{settings.meds_enabled === false
           ? 'Meds are hidden on Today and the Meds button is greyed out. Past doses stay in Summary and exports, and intervals are kept for when you turn it back on.'
           : 'Turn off when mom no longer needs meds tracked. Nothing is deleted.'}</div>
+      </div>
+
+      <div className="card">
+        <h3>Sleep</h3>
+        <Seg<'on' | 'off'> options={[{ value: 'on', label: 'Tracking sleep' }, { value: 'off', label: 'Off' }]} value={settings.sleep_enabled === false ? 'off' : 'on'} onChange={(v) => void saveSettings({ sleep_enabled: v === 'on' })} />
+        {settings.sleep_enabled !== false ? (
+          <>
+            <div className="night-times">
+              <TextSetting key={`ss-${sleepWin.start}`} label="Night sleep from" type="time" value={sleepWin.start} onSave={(v) => v && void saveSettings({ night_sleep: { ...sleepWin, start: v } })} />
+              <TextSetting key={`se-${sleepWin.end}`} label="until" type="time" value={sleepWin.end} onSave={(v) => v && void saveSettings({ night_sleep: { ...sleepWin, end: v } })} />
+            </div>
+            <div className="muted small">A sleep that starts in this window is logged as night sleep, anything else as a nap, and you can flip it when you log. Bedtime is the first night sleep of each evening.</div>
+          </>
+        ) : (
+          <div className="muted small">Sleep is hidden on Today, in the dock and in the Summary table. Past sleeps stay in All entries and the exports.</div>
+        )}
       </div>
 
       <div className="card">

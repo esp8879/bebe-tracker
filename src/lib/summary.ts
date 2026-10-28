@@ -60,6 +60,7 @@ export function summarize(entries: Entry[]): DaySummary[] {
         s.pumped_ml += e.volume_ml ?? ((e.left_ml ?? 0) + (e.right_ml ?? 0));
         break;
       case 'mom_med':
+      case 'sleep':
         break;
     }
   }

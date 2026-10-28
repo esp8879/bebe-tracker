@@ -6,10 +6,12 @@ import { STOOL_COLORS, type EntryType } from '../types';
 import { EntryRow } from '../components/EntryRow';
 import { Chips, Seg } from '../components/common';
 import { volValue, volLabel } from '../lib/units';
+import { sleepMsOnDay, napsOnDay, nightStats } from '../lib/sleep';
+import { fmtDur, fmtTime } from '../lib/time';
 
 const FILTERS: { value: EntryType | 'all'; label: string }[] = [
   { value: 'all', label: 'All' }, { value: 'feed', label: 'Feeds' }, { value: 'diaper', label: 'Diapers' },
-  { value: 'pump', label: 'Pumps' }, { value: 'mom_med', label: 'Meds' },
+  { value: 'pump', label: 'Pumps' }, { value: 'mom_med', label: 'Meds' }, { value: 'sleep', label: 'Sleep' },
 ];
 
 function DaysView() {
@@ -18,14 +20,16 @@ function DaysView() {
   const days = useMemo(() => summarize(entries), [entries]);
   const dob = parseNYLocal(settings.dob);
   const diapers = settings.diapers_enabled !== false;
-  const cols = diapers ? 13 : 9;
+  const sleepOn = settings.sleep_enabled !== false;
+  const cols = 9 + (sleepOn ? 4 : 0) + (diapers ? 4 : 0);
+  const now = Date.now();
   return (
     <div className="card" style={{ padding: 0 }}>
       <div className="table-wrap" style={{ margin: 0, padding: 0 }}>
         <table className="summary">
           <thead>
             <tr>
-              <th>Day</th><th>Age</th><th>Feeds</th><th>Breast</th><th>Bottle {volLabel()}</th><th>Formula {volLabel()}</th><th>BM {volLabel()}</th><th>Pumps</th><th>Pumped {volLabel()}</th>{diapers && <><th>Diapers</th><th>Wet</th><th>Dirty</th><th>Stool</th></>}
+              <th>Day</th><th>Age</th><th>Feeds</th><th>Breast</th><th>Bottle {volLabel()}</th><th>Formula {volLabel()}</th><th>BM {volLabel()}</th><th>Pumps</th><th>Pumped {volLabel()}</th>{sleepOn && <><th>Sleep</th><th>Naps</th><th>Night</th><th>Bedtime</th></>}{diapers && <><th>Diapers</th><th>Wet</th><th>Dirty</th><th>Stool</th></>}
             </tr>
           </thead>
           <tbody>
@@ -43,6 +47,15 @@ function DaysView() {
                   <td>{d.breastmilk_bottle_ml ? volValue(d.breastmilk_bottle_ml) : '—'}</td>
                   <td>{d.pumps || '—'}</td>
                   <td>{d.pumped_ml ? volValue(d.pumped_ml) : '—'}</td>
+                  {sleepOn && (() => {
+                    const total = sleepMsOnDay(entries, d.day, now), n = nightStats(entries, d.day, now);
+                    return <>
+                      <td>{total ? fmtDur(total) : '—'}</td>
+                      <td>{napsOnDay(entries, d.day) || '—'}</td>
+                      <td>{n.longestMs ? fmtDur(n.longestMs) : '—'}</td>
+                      <td>{n.bedtime ? fmtTime(n.bedtime) : '—'}</td>
+                    </>;
+                  })()}
                   {diapers && <>
                     <td>{d.diapers}</td>
                     <td>{d.wet}</td>

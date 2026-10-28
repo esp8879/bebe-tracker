@@ -47,9 +47,23 @@ export interface MomMed extends Base {
   med: Med;
   dose_text?: string;
 }
-export type Entry = Feed | Diaper | Pump | MomMed;
+/** What was happening as she fell asleep. 'own' excludes the others. */
+export type SleepHow = 'feeding' | 'rocking' | 'held' | 'pacifier' | 'own';
+export const SLEEP_HOW: { value: SleepHow; label: string }[] = [
+  { value: 'feeding', label: 'Feeding' }, { value: 'rocking', label: 'Rocking' }, { value: 'held', label: 'Held' },
+  { value: 'pacifier', label: 'Pacifier' }, { value: 'own', label: 'On her own' },
+];
+/** A sleep runs from `at` (fell asleep) to `end_at` (woke up); `end_at` is null while she's asleep. */
+export interface Sleep extends Base {
+  type: 'sleep';
+  end_at?: number | null;
+  /** Night sleep vs nap. Pre-picked from the night window when logged; can be flipped. */
+  night: boolean;
+  how?: SleepHow[];
+}
+export type Entry = Feed | Diaper | Pump | MomMed | Sleep;
 export type EntryType = Entry['type'];
-export const ENTRY_TYPES: EntryType[] = ['feed', 'diaper', 'pump', 'mom_med'];
+export const ENTRY_TYPES: EntryType[] = ['feed', 'diaper', 'pump', 'mom_med', 'sleep'];
 
 export interface Settings {
   baby_name: string;
@@ -71,6 +85,10 @@ export interface Settings {
   meds_enabled?: boolean;
   /** Diaper tracking on Today, in the dock and in the Summary table. Missing = on. History is always kept. */
   diapers_enabled?: boolean;
+  /** Sleep tracking. Missing = on. */
+  sleep_enabled?: boolean;
+  /** A sleep that STARTS inside this household-local window counts as night sleep (may wrap midnight). Missing = 19:00–07:00. */
+  night_sleep?: { start: string; end: string };
   /** Today screen: project the next pump and dose from intervals, or just show when each last happened. */
   today_mode?: 'countdown' | 'last';
   /** Minutes between pumps; blank = the pump row shows the last pump only. */

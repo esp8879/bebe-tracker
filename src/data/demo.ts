@@ -52,6 +52,22 @@ export function demoData(now = Date.now()): { settings: Settings; entries: Entry
   med(now - 4 * H, 'tylenol', '650 mg');
   med(now - 1 * H, 'motrin', '600 mg');
 
+  // Sleep: three nights where the first stretch slowly lengthens, plus naps. Nothing in the future.
+  const sleeps: [number, number, boolean, string[]?][] = [];
+  for (const [back, firstEnd] of [[3, [21, 50]], [2, [22, 5]], [1, [22, 30]]] as const) {
+    sleeps.push([at(back, 19, 10), at(back, firstEnd[0], firstEnd[1]), true, back === 1 ? ['feeding', 'rocking'] : ['feeding']]);
+    sleeps.push([at(back, 22, 55), at(back - 1, 3, 0), true]);
+    sleeps.push([at(back - 1, 3, 35), at(back - 1, 6, 20), true]);
+    if (back < 3) for (const [h1, m1, h2, m2] of [[9, 0, 10, 15], [12, 30, 14, 0], [16, 0, 17, 0]]) sleeps.push([at(back, h1, m1), at(back, h2, m2), false]);
+  }
+  let lastEnd = 0;
+  for (const [start, end, night, how] of sleeps.sort((a, b) => a[0] - b[0])) {
+    if (end > now - 10 * M) continue;
+    push({ type: 'sleep', end_at: end, night, ...(how ? { how } : {}) }, start, night ? 'mom' : 'dad');
+    lastEnd = Math.max(lastEnd, end);
+  }
+  if (lastEnd < now - 2 * H - 10 * M) push({ type: 'sleep', end_at: now - 50 * M, night: false }, now - 2 * H, 'dad');
+
   // Born 18 days ago; weigh-ins from the hospital and the pediatrician.
   const birth = now - 18 * D;
   const [by, bm, bd] = ymd(birth);

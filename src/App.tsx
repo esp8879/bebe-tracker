@@ -3,6 +3,8 @@ import { applyUpdate, updateReady } from './sw';
 import { StoreProvider, useStore } from './data/store';
 import { DemoStoreProvider } from './data/demoStore';
 import { DEMO_HID, DEMO_PATH } from './data/demo';
+import { openSleep } from './lib/sleep';
+import { fmtDur, fmtTime } from './lib/time';
 import { resolveHid, createHousehold, joinHousehold } from './household';
 import { UIProvider, useUI } from './ui';
 import { Editor } from './components/editors';
@@ -60,9 +62,22 @@ function Shell() {
   // Each tab opens at the top; otherwise a long tab's scroll carries over and tucks the next one under the status bar.
   useEffect(() => { window.scrollTo(0, 0); }, [tab]);
   const { editor, apptEditor, weightEditor, openEditor, toast } = useUI();
-  const { settings: tracked } = useStore();
-  const medsOff = tracked.meds_enabled === false;
-  const diapersOff = tracked.diapers_enabled === false;
+  const { settings: tracked, entries, update } = useStore();
+  const asleep = tracked.sleep_enabled !== false ? openSleep(entries) : null;
+  const wokeUp = () => {
+    if (!asleep) return;
+    const at = Date.now();
+    void update(asleep.id, { end_at: at });
+    toast(`Woke up at ${fmtTime(at)} after ${fmtDur(at - asleep.at)}`, () => { void update(asleep.id, { end_at: null }); });
+  };
+  // Switched-off types leave the dock; the rest keep their order so positions stay familiar.
+  const dock = [
+    { key: 'feed', label: 'Feed', on: true, act: () => openEditor('feed') },
+    { key: 'sleep', label: asleep ? 'Woke up' : 'Sleep', on: tracked.sleep_enabled !== false, act: () => (asleep ? wokeUp() : openEditor('sleep')) },
+    { key: 'diaper', label: 'Diaper', on: tracked.diapers_enabled !== false, act: () => openEditor('diaper') },
+    { key: 'pump', label: 'Pump', on: true, act: () => openEditor('pump') },
+    { key: 'mom_med', label: 'Meds', on: tracked.meds_enabled !== false, act: () => openEditor('mom_med') },
+  ].filter((d) => d.on);
   return (
     <NavCtx.Provider value={{ tab, setTab }}>
     <div className="app">
@@ -72,11 +87,12 @@ function Shell() {
       {tab === 'appointments' && <Appointments />}
       {tab === 'settings' && <Settings />}
       {tab === 'today' && (
-        <div className="dock"><div>
-          <button onClick={() => openEditor('feed')}><span className="ico t-feed"><Icon name="feed" /></span>Feed</button>
-          <button className={diapersOff ? 'off' : ''} aria-disabled={diapersOff} onClick={() => (diapersOff ? toast('Diaper tracking is off. Turn it back on in Settings.') : openEditor('diaper'))}><span className="ico t-diaper"><Icon name="diaper" /></span>Diaper</button>
-          <button onClick={() => openEditor('pump')}><span className="ico t-pump"><Icon name="pump" /></span>Pump</button>
-          <button className={medsOff ? 'off' : ''} aria-disabled={medsOff} onClick={() => (medsOff ? toast('Meds tracking is off. Turn it back on in Settings.') : openEditor('mom_med'))}><span className="ico t-mom_med"><Icon name="mom_med" /></span>Meds</button>
+        <div className="dock"><div style={{ gridTemplateColumns: `repeat(${dock.length}, 1fr)` }}>
+          {dock.map((d) => (
+            <button key={d.key} className={d.key === 'sleep' && asleep ? 'asleep' : ''} onClick={d.act}>
+              <span className={`ico t-${d.key}`}><Icon name={d.key as IconName} /></span>{d.label}
+            </button>
+          ))}
         </div></div>
       )}
       <nav className="tabbar"><div>

@@ -6,7 +6,7 @@ export interface NightFeeds { enabled: boolean; interval_min?: number; start: st
 const toMin = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return (h % 24) * 60 + (m || 0); };
 
 /** True when the instant falls inside the night window (household-local clock; the window may wrap midnight). */
-export function isNightAt(ms: number, night: NightFeeds): boolean {
+export function isNightAt(ms: number, night: { start: string; end: string }): boolean {
   const { hh, mm } = localParts(ms);
   const t = hh * 60 + mm, s = toMin(night.start), e = toMin(night.end);
   return s === e ? false : s < e ? t >= s && t < e : t >= s || t < e;

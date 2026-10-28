@@ -98,6 +98,9 @@ const nightSwitch = (label) => [tap('.tabbar button:has-text("Settings")'), tap(
 await shoot(LIVE, `/h/${HID}`, 'settings-feed-timer', [...nightSwitch('Different at night'), async (p) => { const y = await p.evaluate(() => [...document.querySelectorAll('h3')].find((h) => h.textContent === 'Feed timer').getBoundingClientRect().top + window.scrollY - 12); await p.evaluate((y) => window.scrollTo(0, y), y); }]);
 await shoot(LIVE, `/h/${HID}`, 'today-night', [tap('.tabbar button:has-text("Today")')]);
 await shoot(LIVE, `/h/${HID}`, 'night-back-off', [...nightSwitch('Same all day'), tap('.tabbar button:has-text("Today")')]);
+// Sleep: the sheet (not saved) and the Summary table scrolled to the sleep columns
+await shoot(LIVE, `/h/${HID}`, 'sheet-sleep', [tap('.dock button:has-text("Sleep")')]);
+await shoot(LIVE, `/h/${HID}`, 'summary-sleep', [tap('.tabbar button:has-text("Summary")'), async (p) => { await p.evaluate(() => { const w = document.querySelector('.table-wrap'); const th = [...w.querySelectorAll('th')].find((t) => t.textContent === 'Sleep'); w.scrollLeft = th.offsetLeft - w.querySelector('th').offsetWidth - 4; }); }]);
 if (process.env.OLD) {
   await shoot('http://localhost:4174', `/#h=${HID}`, 'v1-today');
   await shoot('http://localhost:4174', `/#h=${HID}`, 'v1-history', [tap('.tabbar button:has-text("History")')]);
