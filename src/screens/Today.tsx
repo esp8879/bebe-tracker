@@ -16,12 +16,27 @@ import { Icon } from '../components/Icon';
 function FitLine({ children, max, min, style }: { children: string; max: number; min: number; style?: CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(max);
-  useLayoutEffect(() => { setSize(max); }, [children, max]);
-  useLayoutEffect(() => { const on = () => setSize(max); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, [max]);
+  // `tick` forces a fresh measurement even when the size is already at max (new text, or the box changed width).
+  const [tick, setTick] = useState(0);
+  const refit = () => { setSize(max); setTick((t) => t + 1); };
+  useLayoutEffect(refit, [children, max]);
   useLayoutEffect(() => {
     const el = ref.current;
-    if (el && size > min && el.scrollWidth > el.clientWidth) setSize((s) => s - 1);
-  }, [size, min, children]);
+    if (!el || size <= min) return;
+    // Measure the text itself (sub-pixel) against the box, with a little slack: scrollWidth rounds, and iOS
+    // would otherwise clip a line that is a fraction of a pixel too wide.
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    if (range.getBoundingClientRect().width > el.getBoundingClientRect().width - 3) setSize((s) => s - 1);
+  }, [size, min, children, tick]);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    let w = el.getBoundingClientRect().width;
+    const ro = new ResizeObserver(() => { const nw = el.getBoundingClientRect().width; if (Math.abs(nw - w) > 0.5) { w = nw; refit(); } });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [max]);
   return <div ref={ref} className="ellipsis" style={{ ...style, fontSize: size }}>{children}</div>;
 }
 

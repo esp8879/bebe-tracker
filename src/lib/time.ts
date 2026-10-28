@@ -106,6 +106,8 @@ export function fmtWhen(ms: number, now: number): string {
   if (day === today) return `Today ${fmtTime(ms)}`;
   if (day === addDays(today, 1)) return `Tomorrow ${fmtTime(ms)}`;
   const diffDays = Math.round((dayStartMs(day) - dayStartMs(today)) / 86_400_000);
-  if (diffDays > 1 && diffDays <= 6) return F().weekdayTime.format(new Date(ms)).replace(',', '');
-  return F().monthDayTime.format(new Date(ms));
+  // Built from parts, not the engine's pattern: Safari says "Nov 9 at 9:15 AM", Chrome "Nov 9, 9:15 AM".
+  const part = (fmt: Intl.DateTimeFormat, type: string) => fmt.formatToParts(new Date(ms)).find((p) => p.type === type)?.value ?? '';
+  if (diffDays > 1 && diffDays <= 6) return `${part(F().weekdayTime, 'weekday')} ${fmtTime(ms)}`;
+  return `${part(F().monthDayTime, 'month')} ${part(F().monthDayTime, 'day')}, ${fmtTime(ms)}`;
 }
