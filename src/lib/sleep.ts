@@ -100,3 +100,59 @@ export function nightForToday(entries: Entry[], now: number, window = DEFAULT_NI
   const [y, m, d] = key0.split('-').map(Number);
   return { key: dayOf(fromLocal(y, m, d - 1, 12, 0)), tonight: false };
 }
+
+const prevKey = (key: string, n = 1) => { const [y, m, d] = key.split('-').map(Number); return dayOf(fromLocal(y, m, d - n, 12, 0)); };
+
+/** The most recent night that has finished: last night in the morning and afternoon, the night before once tonight's window opens. */
+export function lastCompletedNight(now: number, window = DEFAULT_NIGHT_SLEEP): string {
+  const k0 = nightKey(now);
+  return isNightAt(now, window) || localParts(now).hh >= 12 ? prevKey(k0) : k0;
+}
+
+/** The night in progress (inside the night window), if any. */
+export const currentNight = (now: number, window = DEFAULT_NIGHT_SLEEP): string | null => (isNightAt(now, window) ? nightKey(now) : null);
+
+/** `n` night keys ending at `last`, newest first. */
+export const nightsBack = (last: string, n: number): string[] => Array.from({ length: n }, (_, i) => prevKey(last, i));
+
+/** Feeds after bedtime that started inside the night window: the night feeds. */
+export function nightFeeds(entries: Entry[], key: string, now: number, window = DEFAULT_NIGHT_SLEEP): number[] {
+  const bed = nightStats(entries, key, now).bedtime;
+  if (bed === null) return [];
+  return entries.filter((e) => e.type === 'feed' && isActive(e) && e.at > bed && nightKey(e.at) === key && isNightAt(e.at, window)).map((e) => e.at);
+}
+
+/** Average clock time of a set of instants, treating times after midnight as late evening (bedtimes wrap). Returns minutes after noon. */
+export function avgEveningMinutes(times: number[]): number | null {
+  if (!times.length) return null;
+  const mins = times.map((t) => { const { hh, mm } = localParts(t); return ((hh * 60 + mm) - 720 + 1440) % 1440; });
+  return mins.reduce((a, b) => a + b, 0) / mins.length;
+}
+
+/** "7:24 PM" from minutes after noon. */
+export function fmtEveningMinutes(m: number): string {
+  const t = (Math.round(m) + 720) % 1440;
+  const hh = Math.floor(t / 60), mm = t % 60;
+  return `${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;
+}
+
+export interface WeekSummary { nights: number; firstStretchMs: number | null; bedtimeMin: number | null; nightFeeds: number | null }
+
+/** Averages over the given nights, counting only nights that have a logged bedtime. */
+export function weekSummary(entries: Entry[], keys: string[], now: number, window = DEFAULT_NIGHT_SLEEP): WeekSummary {
+  const stats = keys.map((k) => nightStats(entries, k, now)).filter((s) => s.bedtime !== null);
+  if (!stats.length) return { nights: 0, firstStretchMs: null, bedtimeMin: null, nightFeeds: null };
+  const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  return {
+    nights: stats.length,
+    firstStretchMs: avg(stats.map((s) => s.firstStretchMs)),
+    bedtimeMin: avgEveningMinutes(stats.map((s) => s.bedtime!)),
+    nightFeeds: avg(stats.map((s) => nightFeeds(entries, s.key, now, window).length)),
+  };
+}
+
+/** Nights (within the last `days`) that have at least one night sleep logged. */
+export function loggedNights(entries: Entry[], now: number, days = 14): number {
+  const keys = new Set(sleepsOf(entries).filter((s) => s.night && s.at > now - days * 86_400_000).map((s) => nightKey(s.at)));
+  return keys.size;
+}

@@ -6,6 +6,8 @@ import { STOOL_COLORS, type EntryType } from '../types';
 import { EntryRow } from '../components/EntryRow';
 import { Chips, Seg } from '../components/common';
 import { volValue, volLabel } from '../lib/units';
+import { useNav, type SummaryMode } from '../App';
+import { SleepDiary } from '../components/SleepDiary';
 import { sleepMsOnDay, napsOnDay, nightStats } from '../lib/sleep';
 import { fmtDur, fmtTime } from '../lib/time';
 
@@ -104,12 +106,15 @@ function EntriesView() {
 }
 
 export function Summary() {
-  const [mode, setMode] = useState<'days' | 'entries'>('days');
+  const { summaryMode: mode, setSummaryMode: setMode } = useNav();
+  const { settings } = useStore();
+  const sleepOn = settings.sleep_enabled !== false;
+  const view = mode === 'sleep' && !sleepOn ? 'days' : mode;
   return (
     <div className="screen">
       <h1>Summary</h1>
-      <Seg options={[{ value: 'days', label: 'By day' }, { value: 'entries', label: 'All entries' }]} value={mode} onChange={setMode} />
-      {mode === 'days' ? <DaysView /> : <EntriesView />}
+      <Seg<SummaryMode> options={[{ value: 'days', label: 'By day' }, { value: 'entries', label: 'All entries' }, ...(sleepOn ? [{ value: 'sleep' as const, label: 'Sleep' }] : [])]} value={view} onChange={setMode} />
+      {view === 'days' ? <DaysView /> : view === 'entries' ? <EntriesView /> : <SleepDiary />}
     </div>
   );
 }

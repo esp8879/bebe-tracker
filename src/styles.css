@@ -191,3 +191,28 @@ table.summary td.expand { padding: 0; text-align: left; white-space: normal; }
 .badge.demo { background: var(--accent); color: var(--accent-ink); text-decoration: none; font-weight: 700; white-space: nowrap; }
 .night-times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .night-times input { min-width: 0; }
+
+/* Sleep diary (Summary → Sleep): one row per night, 6 PM to 8 AM */
+.diary { gap: 6px; }
+.diary-axis { position: relative; height: 14px; margin-left: 92px; font-size: 11px; color: var(--muted); }
+.diary-axis span { position: absolute; transform: translateX(-50%); }
+.diary-axis span:first-child { transform: none; }
+.diary-row { display: grid; grid-template-columns: 86px 1fr; gap: 6px; align-items: center; min-height: 34px; }
+.diary-label { display: flex; flex-direction: column; font-size: 12px; font-weight: 600; line-height: 1.25; min-width: 0; }
+.diary-label span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.diary-label .muted { font-weight: 500; font-size: 10.5px; }
+.diary-track { position: relative; height: 22px; background: var(--card2); border-radius: 6px; }
+.diary-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border); }
+.diary-bar { position: absolute; top: 5px; height: 12px; border-radius: 4px; background: var(--t-sleep); }
+.diary-bar.nap { background: transparent; border: 1.5px solid var(--t-sleep); }
+.diary-bar.open { opacity: .7; }
+.diary-dot { position: absolute; top: 7px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--t-feed); box-shadow: 0 0 0 2px var(--card2); }
+.diary-key { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.diary-key .diary-bar, .diary-key .diary-dot { position: static; display: inline-block; width: 18px; margin: 0 0 0 8px; box-shadow: none; }
+.diary-key .diary-bar:first-child { margin-left: 0; }
+.diary-key .diary-dot { width: 8px; }
+table.compare { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.compare th { text-align: right; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; padding: 4px 0; }
+table.compare td { padding: 7px 0; border-top: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
+table.compare td:first-child { text-align: left; color: var(--muted); }
+table.compare td:nth-child(2) { font-weight: 700; }

@@ -21,7 +21,8 @@ import type { Who } from './types';
 import { Icon, Mark, type IconName } from './components/Icon';
 
 export type Tab = 'today' | 'summary' | 'weight' | 'appointments' | 'settings';
-const NavCtx = createContext<{ tab: Tab; setTab: (t: Tab) => void }>({ tab: 'today', setTab: () => undefined });
+export type SummaryMode = 'days' | 'entries' | 'sleep';
+const NavCtx = createContext<{ tab: Tab; setTab: (t: Tab) => void; summaryMode: SummaryMode; setSummaryMode: (m: SummaryMode) => void }>({ tab: 'today', setTab: () => undefined, summaryMode: 'days', setSummaryMode: () => undefined });
 export const useNav = () => useContext(NavCtx);
 const TABS: { id: Tab; label: string }[] = [
   { id: 'today', label: 'Today' }, { id: 'summary', label: 'Summary' }, { id: 'weight', label: 'Weight' },
@@ -59,6 +60,7 @@ function UpdateBar() {
 
 function Shell() {
   const [tab, setTab] = useState<Tab>('today');
+  const [summaryMode, setSummaryMode] = useState<SummaryMode>('days');
   // Each tab opens at the top; otherwise a long tab's scroll carries over and tucks the next one under the status bar.
   useEffect(() => { window.scrollTo(0, 0); }, [tab]);
   const { editor, apptEditor, weightEditor, openEditor, toast } = useUI();
@@ -79,7 +81,7 @@ function Shell() {
     { key: 'mom_med', label: 'Meds', on: tracked.meds_enabled !== false, act: () => openEditor('mom_med') },
   ].filter((d) => d.on);
   return (
-    <NavCtx.Provider value={{ tab, setTab }}>
+    <NavCtx.Provider value={{ tab, setTab, summaryMode, setSummaryMode }}>
     <div className="app">
       {tab === 'today' && <Today />}
       {tab === 'summary' && <Summary />}

@@ -90,10 +90,10 @@
     <h1>bébé <span>tracker</span></h1>
     <p class="lede">A shared logbook for a newborn's feeds, diapers, pumping and mom's meds. Two phones, one live dataset, built for one-handed use at 3 am. This page follows how it changed over its first ten days.</p>
     <div class="facts">
-      <span><b>56</b> releases</span>
+      <span><b>57</b> releases</span>
       <span><b>46</b> days</span>
       <span><b>5</b> tabs</span>
-      <span><b>40</b> automated tests</span>
+      <span><b>44</b> automated tests</span>
       <span>Live at <a href="https://bebe.fyi">bebe.fyi</a></span>
     </div>
   </header>
@@ -445,6 +445,23 @@
         </div>
       </div>
     </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.19</div><div class="when">Tue Oct 27 · night</div></div>
+      <div class="body">
+        <h2>The sleep diary</h2>
+        <ul class="notes">
+          <li><b>A Sleep view in Summary.</b> One row per night from 6 PM to 8 AM, newest on top, for the last two weeks. Sleep is a filled bar, a nap an outlined one, feeds are dots. Bedtime is where the first bar starts, the first stretch is how far it runs, and how she went down ("fed + rocked") sits under the date.</li>
+          <li><b>This week against last.</b> Under the diary: average first stretch, average bedtime and night feeds per night, for the last seven finished nights and the seven before. No colours for good or bad, only the numbers.</li>
+          <li><b>Nights on Today.</b> Once three nights are logged, the weight card makes way for a small chart: last night's first stretch, with a bar for each of the last seven nights. Tap it for the diary. Weight is a tap away on its own tab, and comes back here if sleep tracking is off.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/summary-diary.png" alt="Summary's Sleep view: a sleep diary with one row per night from 6 PM to 8 AM, sleep as cream bars and feeds as blue dots, with how she fell asleep under each date." loading="lazy"></div><figcaption><b>Sleep diary</b>Two weeks of nights, stacked.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/summary-diary-compare.png" alt="Below the diary: a table comparing the last 7 nights with the 7 before for first stretch, bedtime and night feeds." loading="lazy"></div><figcaption><b>Week over week</b>First stretch, bedtime, night feeds.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/today.png" alt="Today with a Nights card in place of weight: 3h 40m first stretch last night above seven small bars." loading="lazy"></div><figcaption><b>Nights card</b>Where weight used to sit.</figcaption></figure>
+        </div>
+      </div>
+    </article>
   </section>
 
   <section class="grid2">
@@ -466,7 +483,7 @@
         <li>www.bebe.fyi redirect.</li>
         <li>An Android pass; everything so far was verified on iPhone.</li>
         <li>Feed and med reminders as notifications.</li>
-        <li>A sleep diary chart: one row per night, sleep as bars and feeds as dots, this week against last.</li>
+        <li>A light pass on the sleep diary once it has two real weeks in it.</li>
       </ul>
     </div>
   </section>

@@ -9,7 +9,8 @@ import { summaryForDay } from '../lib/summary';
 import { MEDS, STOOL_COLORS, medLabel, allMeds, type Med } from '../types';
 import { volValue, volLabel, fmtMl, fmtWeight, fmtPct, pctChange } from '../lib/units';
 import { WeightChart } from '../components/WeightChart';
-import { openSleep, lastWake, sleepMsOnDay, napsOnDay, nightStats, nightForToday, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
+import { NightsCard } from '../components/SleepDiary';
+import { openSleep, lastWake, sleepMsOnDay, napsOnDay, nightStats, nightForToday, loggedNights, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
 import { Icon } from '../components/Icon';
 
 /** One line of text that steps its font size down until it fits its box, so the appointment date never wraps. */
@@ -43,7 +44,7 @@ function FitLine({ children, max, min, style }: { children: string; max: number;
 export function Today() {
   const { entries, settings, pending, stuck, online, appointments, weights, demo } = useStore();
   const { openEditor, openWeightEditor } = useUI();
-  const { setTab } = useNav();
+  const { setTab, setSummaryMode } = useNav();
   const now = useNow(15_000);
   const today = dayOf(now);
   const dob = parseNYLocal(settings.dob);
@@ -69,6 +70,8 @@ export function Today() {
   const nightPick = sleepOn ? nightForToday(entries, now, settings.night_sleep ?? DEFAULT_NIGHT_SLEEP) : null;
   const night = nightPick ? nightStats(entries, nightPick.key, now) : null;
   const stale = !!asleep && now - asleep.at > 12 * 3_600_000;
+  // Once a few nights are logged, the Nights chart takes the weight card's place (weight is on its own tab).
+  const showNights = sleepOn && loggedNights(entries, now, 14) >= 3;
   const stool = s.last_stool ? STOOL_COLORS.find((c) => c.value === s.last_stool) : undefined;
   const lastW = weights[weights.length - 1];
   const birthW = weights[0];
@@ -239,7 +242,7 @@ export function Today() {
       </div>
 
       <div className="duo">
-        <div className="card compact pressable" onClick={() => (weights.length ? setTab('weight') : openWeightEditor())}>
+        {showNights ? <NightsCard onOpen={() => { setSummaryMode('sleep'); setTab('summary'); }} /> : <div className="card compact pressable" onClick={() => (weights.length ? setTab('weight') : openWeightEditor())}>
           <h3>Weight</h3>
           {lastW ? (
             <>
@@ -250,7 +253,7 @@ export function Today() {
           ) : (
             <div className="muted small">Add the birth weight to start ›</div>
           )}
-        </div>
+        </div>}
         <div className="card compact pressable" onClick={() => setTab('appointments')}>
           <h3>Next appt</h3>
           {nextAppt ? (

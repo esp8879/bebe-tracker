@@ -28,7 +28,7 @@ export function demoData(now = Date.now()): { settings: Settings; entries: Entry
 
   // Two full prior days for the Summary table.
   for (const [back, wetN, color] of [[2, 6, 'green'], [1, 7, 'yellow']] as const) {
-    const slots = [[0, 30], [3, 15], [6, 0], [8, 45], [11, 30], [14, 15], [17, 0], [20, 30], [23, 0]];
+    const slots = [[7, 0], [10, 0], [13, 0], [16, 0]];
     slots.forEach(([hh, mm], i) => {
       const t = at(back, hh, mm);
       if (i % 2 === 0) feed(t, 'breast', { side: i % 4 === 0 ? 'left' : 'right', duration_min: 15 + (i % 3) * 5, latch_quality: 'good' });
@@ -52,13 +52,27 @@ export function demoData(now = Date.now()): { settings: Settings; entries: Entry
   med(now - 4 * H, 'tylenol', '650 mg');
   med(now - 1 * H, 'motrin', '600 mg');
 
-  // Sleep: three nights where the first stretch slowly lengthens, plus naps. Nothing in the future.
+  // Sleep: fourteen nights where bedtime drifts earlier, the first stretch lengthens and night feeds thin out.
+  // Each night: a bedtime feed, the first stretch, then feeds between the later stretches. Nothing in the future.
   const sleeps: [number, number, boolean, string[]?][] = [];
-  for (const [back, firstEnd] of [[3, [21, 50]], [2, [22, 5]], [1, [22, 30]]] as const) {
-    sleeps.push([at(back, 19, 10), at(back, firstEnd[0], firstEnd[1]), true, back === 1 ? ['feeding', 'rocking'] : ['feeding']]);
-    sleeps.push([at(back, 22, 55), at(back - 1, 3, 0), true]);
-    sleeps.push([at(back - 1, 3, 35), at(back - 1, 6, 20), true]);
-    if (back < 3) for (const [h1, m1, h2, m2] of [[9, 0, 10, 15], [12, 30, 14, 0], [16, 0, 17, 0]]) sleeps.push([at(back, h1, m1), at(back, h2, m2), false]);
+  for (let back = 14; back >= 1; back--) {
+    const t = (14 - back) / 13;
+    const bed = at(back, 19, 45) - Math.round(35 * t) * M;
+    const first = bed + (135 + Math.round(85 * t)) * M;
+    const nightFeedsAt: number[] = [bed - 20 * M];
+    sleeps.push([bed, first, true, back % 3 === 0 ? ['feeding', 'rocking'] : back % 3 === 1 ? ['feeding'] : ['rocking', 'pacifier']]);
+    let t0 = first + 30 * M;
+    nightFeedsAt.push(first + 5 * M);
+    const chunks = back > 7 ? [125, 115, 120] : [240, 150];
+    for (const len of chunks) {
+      const end = t0 + len * M;
+      if (end > at(back - 1, 6, 50)) break;
+      sleeps.push([t0, end, true]);
+      nightFeedsAt.push(end + 5 * M);
+      t0 = end + 30 * M;
+    }
+    if (back <= 2) for (const [h1, m1, h2, m2] of [[9, 0, 10, 15], [12, 30, 14, 0], [16, 0, 17, 0]]) sleeps.push([at(back, h1, m1), at(back, h2, m2), false]);
+    for (const f of nightFeedsAt) if (f < now) feed(f, 'bottle_formula', { volume_ml: 90 }, f % 2 ? 'dad' : 'mom');
   }
   let lastEnd = 0;
   for (const [start, end, night, how] of sleeps.sort((a, b) => a[0] - b[0])) {

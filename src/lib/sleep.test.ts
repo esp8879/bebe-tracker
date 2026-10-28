@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Entry, Sleep } from '../types';
 import { fromNYLocal, setTimezone } from './time';
-import { openSleep, lastWake, nightKey, sleepMsOnDay, napsOnDay, nightStats, latestNightKey, isBedtime, isNightSleepAt, nightForToday } from './sleep';
+import { openSleep, lastWake, nightKey, sleepMsOnDay, napsOnDay, nightStats, latestNightKey, isBedtime, isNightSleepAt, nightForToday, lastCompletedNight, currentNight, nightsBack, nightFeeds, avgEveningMinutes, fmtEveningMinutes, weekSummary, loggedNights } from './sleep';
 
 setTimezone('America/New_York');
 const H = 3_600_000, M = 60_000;
@@ -58,5 +58,32 @@ describe('nightForToday', () => {
   it('switches to tonight once she has slept tonight', () => {
     expect(nightForToday(list.slice(0, 2), at(21, 20))).toEqual({ key: '2026-10-20', tonight: false });
     expect(nightForToday(list, at(21, 20))).toEqual({ key: '2026-10-21', tonight: true });
+  });
+});
+
+describe('weekly sleep', () => {
+  const feedAt = (t: number): Entry => ({ id: `f${t}`, type: 'feed', kind: 'bottle_formula', volume_ml: 90, at: t, day: 'x', created_at: t, updated_at: t, logged_by: 'mom' }) as Entry;
+  it('knows which night has finished', () => {
+    expect(lastCompletedNight(at(21, 9))).toBe('2026-10-20');
+    expect(lastCompletedNight(at(21, 15))).toBe('2026-10-20');
+    expect(lastCompletedNight(at(21, 21))).toBe('2026-10-20');
+    expect(lastCompletedNight(at(22, 2))).toBe('2026-10-20');
+    expect(currentNight(at(21, 21))).toBe('2026-10-21');
+    expect(currentNight(at(21, 15))).toBeNull();
+    expect(nightsBack('2026-10-20', 3)).toEqual(['2026-10-20', '2026-10-19', '2026-10-18']);
+  });
+  it('averages bedtime across midnight and counts night feeds after bedtime', () => {
+    expect(fmtEveningMinutes(avgEveningMinutes([at(20, 23, 30), at(21, 0, 30)])!)).toBe('12:00 AM');
+    const list = [
+      sleep(at(20, 19, 0), at(20, 22, 0), true), feedAt(at(20, 18, 40)), feedAt(at(20, 22, 5)), feedAt(at(21, 2, 0)), feedAt(at(21, 7, 30)),
+      sleep(at(19, 20, 0), at(19, 23, 0), true), feedAt(at(19, 23, 5)),
+    ];
+    expect(nightFeeds(list, '2026-10-20', at(21, 12)).length).toBe(2);
+    const w = weekSummary(list, ['2026-10-20', '2026-10-19', '2026-10-18'], at(21, 12));
+    expect(w.nights).toBe(2);
+    expect(w.firstStretchMs).toBe(3 * H);
+    expect(fmtEveningMinutes(w.bedtimeMin!)).toBe('7:30 PM');
+    expect(w.nightFeeds).toBe(1.5);
+    expect(loggedNights(list, at(21, 12))).toBe(2);
   });
 });
