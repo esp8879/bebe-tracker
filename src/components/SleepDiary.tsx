@@ -3,7 +3,7 @@ import { useNow } from '../hooks';
 import { isActive } from '../lib/summary';
 import { fmtDur, fromLocal } from '../lib/time';
 import {
-  DEFAULT_NIGHT_SLEEP, currentNight, lastCompletedNight, nightsBack, nightKey, nightStats, sleepsOf, weekSummary, fmtEveningMinutes, loggedNights,
+  DEFAULT_NIGHT_SLEEP, placeSegments, currentNight, lastCompletedNight, nightsBack, nightKey, nightStats, sleepsOf, weekSummary, fmtEveningMinutes, loggedNights,
 } from '../lib/sleep';
 import { SLEEP_HOW_LABEL } from '../types';
 
@@ -68,16 +68,18 @@ export function SleepDiary() {
               </div>
               <div className="diary-track">
                 {TICKS.slice(1).map((t) => <i key={t.label} className="diary-grid" style={{ left: `${(t.h / SPAN_H) * 100}%` }} />)}
-                {inRow.map((s) => {
-                  const a = pct(Math.max(s.at, span[0]), span), b = pct(Math.min(s.end_at ?? now, span[1]), span);
-                  return <b key={s.id} className={`diary-bar${s.night ? '' : ' nap'}${s.end_at == null ? ' open' : ''}`} style={{ left: `${a}%`, width: `${Math.max(0.8, b - a)}%` }} />;
-                })}
+                {inRow.flatMap((s) => placeSegments(s, now).map(([from, to, place], i) => {
+                  if (to < span[0] || from > span[1]) return null;
+                  const a = pct(Math.max(from, span[0]), span), b = pct(Math.min(to, span[1]), span);
+                  return <b key={`${s.id}-${i}`} className={`diary-bar${place ? ` p-${place}` : ''}${s.night ? '' : ' nap'}${s.end_at == null ? ' open' : ''}`} style={{ left: `${a}%`, width: `${Math.max(0.8, b - a)}%` }} />;
+                }))}
                 {dots.map((f) => <em key={f.id} className="diary-dot" style={{ left: `${pct(f.at, span)}%` }} />)}
               </div>
             </div>
           );
         })}
-        <div className="diary-key muted small"><b className="diary-bar" /> sleep <b className="diary-bar nap" /> nap <em className="diary-dot" /> feed</div>
+        <div className="diary-key muted small"><b className="diary-bar" /> bassinet <b className="diary-bar p-contact" /> contact <b className="diary-bar p-stroller" /> stroller <em className="diary-dot" /> feed</div>
+        <div className="muted small">Faded bars are naps. Bars without a place logged are solid.</div>
       </div>
 
       {thisWeek.nights > 0 && (

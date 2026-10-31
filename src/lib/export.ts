@@ -10,14 +10,14 @@ const q = (v: unknown) => {
 
 /** One row per entry, sparse columns, oldest first. */
 export function entriesToCsv(entries: Entry[]): string {
-  const cols = ['id', 'type', 'date', 'time', 'day', 'logged_by', 'feed_kind', 'side', 'duration_min', 'volume_ml', 'volume_oz', 'latch', 'wet', 'dirty', 'stool_color', 'stool_amount', 'med', 'dose_text', 'sleep_kind', 'woke_date', 'woke_time', 'sleep_minutes', 'fell_asleep', 'notes', 'deleted'];
+  const cols = ['id', 'type', 'date', 'time', 'day', 'logged_by', 'feed_kind', 'side', 'duration_min', 'volume_ml', 'volume_oz', 'latch', 'wet', 'dirty', 'stool_color', 'stool_amount', 'med', 'dose_text', 'sleep_kind', 'woke_date', 'woke_time', 'sleep_minutes', 'sleep_places', 'fell_asleep', 'notes', 'deleted'];
   const rows = [...entries].sort((a, b) => a.at - b.at).map((e) => {
     const r: Record<string, unknown> = { id: e.id, type: e.type, date: toDatetimeLocal(e.at).slice(0, 10), time: fmtTime(e.at), day: dayOf(e.at), logged_by: e.logged_by, notes: e.notes, deleted: e.deleted_at ? 'yes' : '' };
     if (e.type === 'feed') Object.assign(r, { feed_kind: e.kind, side: e.side, duration_min: e.duration_min, volume_ml: e.volume_ml, volume_oz: e.volume_ml != null ? +mlToOz(e.volume_ml).toFixed(2) : undefined, latch: e.latch_quality });
     if (e.type === 'diaper') Object.assign(r, { wet: e.wet ? 'yes' : 'no', dirty: e.dirty ? 'yes' : 'no', stool_color: e.stool_color, stool_amount: e.stool_amount });
     if (e.type === 'pump') Object.assign(r, { duration_min: e.duration_min, volume_ml: e.volume_ml, volume_oz: e.volume_ml != null ? +mlToOz(e.volume_ml).toFixed(2) : undefined });
     if (e.type === 'mom_med') Object.assign(r, { med: e.med, dose_text: e.dose_text });
-    if (e.type === 'sleep') Object.assign(r, { sleep_kind: e.night ? 'night' : 'nap', woke_date: e.end_at != null ? toDatetimeLocal(e.end_at).slice(0, 10) : '', woke_time: e.end_at != null ? fmtTime(e.end_at) : 'asleep', sleep_minutes: e.end_at != null ? Math.round((e.end_at - e.at) / 60_000) : '', fell_asleep: e.how?.join(' + ') });
+    if (e.type === 'sleep') Object.assign(r, { sleep_kind: e.night ? 'night' : 'nap', woke_date: e.end_at != null ? toDatetimeLocal(e.end_at).slice(0, 10) : '', woke_time: e.end_at != null ? fmtTime(e.end_at) : 'asleep', sleep_minutes: e.end_at != null ? Math.round((e.end_at - e.at) / 60_000) : '', sleep_places: e.places?.map((p) => `${p.place} ${fmtTime(p.at)}`).join(' > '), fell_asleep: e.how?.join(' + ') });
     return cols.map((c) => q(r[c])).join(',');
   });
   return [cols.join(','), ...rows].join('\n') + '\n';

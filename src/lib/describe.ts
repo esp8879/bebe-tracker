@@ -34,6 +34,7 @@ export function describe(e: Entry): string {
     case 'sleep': {
       const bits = [e.night ? 'Night sleep' : 'Nap'];
       bits.push(e.end_at != null ? `${fmtDur(e.end_at - e.at)} · woke ${fmtTime(e.end_at)}` : 'asleep now');
+      if (e.places?.length) bits.push(e.places.map((p) => p.place).join(' → '));
       if (e.how?.length) bits.push(e.how.map((h) => SLEEP_HOW_LABEL[h] ?? h).join(', '));
       return bits.join(' · ');
     }

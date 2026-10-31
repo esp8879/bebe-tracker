@@ -10,7 +10,7 @@ import { MEDS, STOOL_COLORS, medLabel, allMeds, type Med } from '../types';
 import { volValue, volLabel, fmtMl, fmtWeight, fmtPct, pctChange } from '../lib/units';
 import { WeightChart } from '../components/WeightChart';
 import { NightsCard } from '../components/SleepDiary';
-import { openSleep, lastWake, sleepMsOnDay, napsOnDay, nightStats, nightForToday, loggedNights, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
+import { placeTrail, openSleep, lastWake, sleepMsOnDay, napsOnDay, nightStats, nightForToday, loggedNights, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
 import { Icon } from '../components/Icon';
 
 /** One line of text that steps its font size down until it fits its box, so the appointment date never wraps. */
@@ -122,7 +122,7 @@ export function Today() {
               {asleep ? <span className={stale ? 'amber' : ''}>{stale ? `Still asleep? ${ago(now - asleep.at)}` : `Asleep ${fmtDur(now - asleep.at)}`}</span>
                 : woke ? <span>Awake {fmtDur(now - woke)}</span>
                 : <span className="muted">No sleep logged yet</span>}
-              <span className="sub">{asleep ? (stale ? 'Tap to fix the times' : `since ${fmtTime(asleep.at)} · ${asleep.night ? 'night' : 'nap'}`)
+              <span className="sub">{asleep ? (stale ? 'Tap to fix the times' : `since ${fmtTime(asleep.at)} · ${asleep.night ? 'night' : 'nap'}${placeTrail(asleep) ? ` · ${placeTrail(asleep)}` : ''}`)
                 : woke ? `woke ${fmtTime(woke)} · ${naps} ${naps === 1 ? 'nap' : 'naps'} today`
                 : 'Tap Sleep when she falls asleep'}</span>
             </span>

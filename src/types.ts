@@ -52,10 +52,17 @@ export interface MomMed extends Base {
  * 'feeding' and 'own' remain only so sleeps logged before 2026-10-28 still read correctly.
  */
 export type SleepHow = 'held' | 'rocking' | 'pacifier' | 'bjorn' | 'feeding' | 'own';
+/** Offered: Held, Carrier, Pacifier. 'bjorn' is the carrier (its stored key predates the rename); 'rocking' is legacy (counts as held). */
 export const SLEEP_HOW: { value: SleepHow; label: string }[] = [
-  { value: 'held', label: 'Held' }, { value: 'rocking', label: 'Rocked' }, { value: 'pacifier', label: 'Pacifier' }, { value: 'bjorn', label: 'Baby Björn' },
+  { value: 'held', label: 'Held' }, { value: 'bjorn', label: 'Carrier' }, { value: 'pacifier', label: 'Pacifier' },
 ];
-export const SLEEP_HOW_LABEL: Record<SleepHow, string> = { held: 'held', rocking: 'rocked', pacifier: 'pacifier', bjorn: 'Björn', feeding: 'fed', own: 'on her own' };
+export const SLEEP_HOW_LABEL: Record<SleepHow, string> = { held: 'held', rocking: 'rocked', pacifier: 'pacifier', bjorn: 'carrier', feeding: 'fed', own: 'on her own' };
+export type SleepPlace = 'contact' | 'bassinet' | 'stroller';
+export const SLEEP_PLACES: { value: SleepPlace; label: string }[] = [
+  { value: 'contact', label: 'Contact' }, { value: 'bassinet', label: 'Bassinet' }, { value: 'stroller', label: 'Stroller' },
+];
+/** Where she slept, as a timeline: the first stop starts at `at`, later stops are moves ("bassinet → contact"). */
+export interface SleepStop { at: number; place: SleepPlace }
 /** A sleep runs from `at` (fell asleep) to `end_at` (woke up); `end_at` is null while she's asleep. */
 export interface Sleep extends Base {
   type: 'sleep';
@@ -63,6 +70,7 @@ export interface Sleep extends Base {
   /** Night sleep vs nap. Pre-picked from the night window when logged; can be flipped. */
   night: boolean;
   how?: SleepHow[];
+  places?: SleepStop[];
 }
 export type Entry = Feed | Diaper | Pump | MomMed | Sleep;
 export type EntryType = Entry['type'];
@@ -90,6 +98,8 @@ export interface Settings {
   diapers_enabled?: boolean;
   /** Sleep tracking. Missing = on. */
   sleep_enabled?: boolean;
+  /** The "Marked Awake" card when she wakes. Missing = on (households from before it existed); new households start with it off. */
+  marked_awake?: boolean;
   /** A sleep that STARTS inside this household-local window counts as night sleep (may wrap midnight). Missing = 19:00–07:00. */
   night_sleep?: { start: string; end: string };
   /** Today screen: project the next pump and dose from intervals, or just show when each last happened. */

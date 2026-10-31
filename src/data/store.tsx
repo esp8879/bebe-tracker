@@ -164,7 +164,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
       } else if (!snap.metadata.fromCache && !seededRef.current) {
         // Confirmed by the server that this household is brand new: write default settings once.
         seededRef.current = true;
-        await setDoc(settingsDoc, { ...DEFAULT_SETTINGS, tz: deviceTimezone() });
+        await setDoc(settingsDoc, { ...DEFAULT_SETTINGS, tz: deviceTimezone(), marked_awake: false });
       }
     }, (err) => console.error('settings listener', err));
   }, [settingsDoc, entriesCol]);

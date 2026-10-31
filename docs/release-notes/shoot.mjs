@@ -98,6 +98,22 @@ const nightSwitch = (label) => [tap('.tabbar button:has-text("Settings")'), tap(
 await shoot(LIVE, `/h/${HID}`, 'settings-feed-timer', [...nightSwitch('Different at night'), async (p) => { const y = await p.evaluate(() => [...document.querySelectorAll('h3')].find((h) => h.textContent === 'Feed timer').getBoundingClientRect().top + window.scrollY - 12); await p.evaluate((y) => window.scrollTo(0, y), y); }]);
 await shoot(LIVE, `/h/${HID}`, 'today-night', [tap('.tabbar button:has-text("Today")')]);
 await shoot(LIVE, `/h/${HID}`, 'night-back-off', [...nightSwitch('Same all day'), tap('.tabbar button:has-text("Today")')]);
+// Marked Awake: from the in-memory demo, so nothing is saved
+if (!ONLY || ONLY.includes('marked-awake')) {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, colorScheme: 'dark', timezoneId: 'America/New_York', serviceWorkers: 'block' });
+  const page = await ctx.newPage();
+  await page.goto(LIVE + '/demo', { waitUntil: 'load' });
+  await page.waitForFunction(() => document.body.innerText.includes('feeds'), null, { timeout: 20000 });
+  await page.locator('.dock button:has-text("Sleep")').click(); await page.waitForTimeout(300);
+  await page.locator('.sheet .chip:has-text("Bassinet")').click();
+  await page.locator('.sheet button:has-text("Start sleep")').click(); await page.waitForTimeout(400);
+  await page.evaluate(() => localStorage.setItem('bebe.awakeLine', '-1'));
+  await page.evaluate(() => { Math.random = () => 0.15; });
+  await page.locator('.dock button:has-text("Woke up")').click(); await page.waitForTimeout(700);
+  await page.screenshot({ path: 'shots/marked-awake.png' });
+  console.log('shot marked-awake');
+  await ctx.close();
+}
 // Sleep: the sheet (not saved) and the Summary table scrolled to the sleep columns
 await shoot(LIVE, `/h/${HID}`, 'sheet-sleep', [tap('.dock button:has-text("Sleep")')]);
 await shoot(LIVE, `/h/${HID}`, 'summary-sleep', [tap('.tabbar button:has-text("Summary")'), async (p) => { await p.evaluate(() => { const w = document.querySelector('.table-wrap'); const th = [...w.querySelectorAll('th')].find((t) => t.textContent === 'Sleep'); w.scrollLeft = th.offsetLeft - w.querySelector('th').offsetWidth - 4; }); }]);

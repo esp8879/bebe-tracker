@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Entry, Sleep } from '../types';
 import { fromNYLocal, setTimezone } from './time';
-import { openSleep, lastWake, nightKey, sleepMsOnDay, napsOnDay, nightStats, latestNightKey, isBedtime, isNightSleepAt, nightForToday, lastCompletedNight, currentNight, nightsBack, nightFeeds, avgEveningMinutes, fmtEveningMinutes, weekSummary, loggedNights } from './sleep';
+import { openSleep, lastWake, nightKey, sleepMsOnDay, napsOnDay, nightStats, latestNightKey, isBedtime, isNightSleepAt, nightForToday, lastCompletedNight, currentNight, nightsBack, nightFeeds, avgEveningMinutes, fmtEveningMinutes, weekSummary, loggedNights, placeNow, placeTrail, defaultPlace, placeSegments } from './sleep';
 
 setTimezone('America/New_York');
 const H = 3_600_000, M = 60_000;
@@ -85,5 +85,21 @@ describe('weekly sleep', () => {
     expect(fmtEveningMinutes(w.bedtimeMin!)).toBe('7:30 PM');
     expect(w.nightFeeds).toBe(1.5);
     expect(loggedNights(list, at(21, 12))).toBe(2);
+  });
+});
+
+describe('sleep places', () => {
+  it('tracks moves, the default, and segments', () => {
+    const moved = sleep(at(20, 13, 0), at(20, 15, 0), false, { places: [{ at: at(20, 13, 0), place: 'bassinet' }, { at: at(20, 14, 0), place: 'contact' }] });
+    const plain = sleep(at(20, 20, 0), at(20, 23, 0), true);
+    const night = sleep(at(21, 20, 0), at(21, 23, 0), true, { places: [{ at: at(21, 20, 0), place: 'bassinet' }] });
+    expect(placeTrail(moved as Sleep)).toBe('bassinet → contact');
+    expect(placeNow(moved as Sleep)).toBe('contact');
+    expect(placeTrail(plain as Sleep)).toBe('');
+    expect(defaultPlace([moved, plain, night], false)).toBe('bassinet');
+    expect(defaultPlace([moved, plain, night], true)).toBe('bassinet');
+    expect(defaultPlace([plain], true)).toBeNull();
+    expect(placeSegments(moved as Sleep, at(21, 0))).toEqual([[at(20, 13, 0), at(20, 14, 0), 'bassinet'], [at(20, 14, 0), at(20, 15, 0), 'contact']]);
+    expect(placeSegments(plain as Sleep, at(21, 0))).toEqual([[at(20, 20, 0), at(20, 23, 0), null]]);
   });
 });

@@ -53,7 +53,7 @@ for (let back = 14; back >= 1; back--) {
   const bed = sleepAt(back, 19, 45) - Math.round(35 * t) * M;
   const first = bed + (135 + Math.round(85 * t)) * M;
   const nf = [bed - 20 * M];
-  S.push([bed, first, true, back % 4 === 0 ? ['rocking'] : back % 4 === 1 ? ['held', 'pacifier'] : back % 4 === 2 ? ['bjorn'] : undefined]);
+  S.push([bed, first, true, back % 4 === 0 ? ['held'] : back % 4 === 1 ? ['held', 'pacifier'] : back % 4 === 2 ? ['bjorn'] : undefined]);
   let t0 = first + 30 * M;
   nf.push(first + 5 * M);
   for (const len of back > 7 ? [125, 115, 120] : [240, 150]) {
@@ -69,7 +69,11 @@ for (let back = 14; back >= 1; back--) {
 let lastEnd = 0;
 for (const [start, end, night, how] of S.sort((a, b) => a[0] - b[0])) {
   if (end > now - 10 * M) continue;
-  E.push({ type: 'sleep', end_at: end, night, ...(how ? { how } : {}), ...base(start, night ? 'mom' : 'dad') });
+  const h = new Date(start - 4 * H).getUTCHours();
+  const places = night
+    ? (Math.round(start / H) % 4 === 0 ? [{ at: start, place: 'bassinet' }, { at: end - 40 * M, place: 'contact' }] : [{ at: start, place: 'bassinet' }])
+    : h < 11 ? [{ at: start, place: 'contact' }] : h < 15 ? [{ at: start, place: 'bassinet' }, { at: start + 50 * M, place: 'contact' }] : [{ at: start, place: 'stroller' }];
+  E.push({ type: 'sleep', end_at: end, night, places, ...(how ? { how } : {}), ...base(start, night ? 'mom' : 'dad') });
   lastEnd = Math.max(lastEnd, end);
 }
 if (lastEnd < now - 2 * H - 10 * M) E.push({ type: 'sleep', end_at: now - 50 * M, night: false, ...base(now - 2 * H, 'dad') });

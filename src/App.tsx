@@ -3,7 +3,8 @@ import { applyUpdate, updateReady } from './sw';
 import { StoreProvider, useStore } from './data/store';
 import { DemoStoreProvider } from './data/demoStore';
 import { DEMO_HID, DEMO_PATH } from './data/demo';
-import { openSleep } from './lib/sleep';
+import { openSleep, placeNow } from './lib/sleep';
+import { MarkedAwake, announceAwake } from './components/MarkedAwake';
 import { fmtDur, fmtTime } from './lib/time';
 import { resolveHid, createHousehold, joinHousehold } from './household';
 import { UIProvider, useUI } from './ui';
@@ -70,7 +71,8 @@ function Shell() {
     if (!asleep) return;
     const at = Date.now();
     void update(asleep.id, { end_at: at });
-    toast(`Woke up at ${fmtTime(at)} after ${fmtDur(at - asleep.at)}`, () => { void update(asleep.id, { end_at: null }); });
+    if (tracked.marked_awake !== false) announceAwake({ id: asleep.id, at, sleptMs: at - asleep.at, place: placeNow(asleep) });
+    else toast(`Woke up at ${fmtTime(at)} after ${fmtDur(at - asleep.at)}`, () => { void update(asleep.id, { end_at: null }); });
   };
   // Switched-off types leave the dock; the rest keep their order so positions stay familiar.
   const dock = [
@@ -101,6 +103,7 @@ function Shell() {
         {TABS.map((t) => <button key={t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}><span className="ico"><Icon name={t.id as IconName} size={22} filled={tab === t.id} /></span>{t.label}</button>)}
       </div></nav>
       <UpdateBar />
+      <MarkedAwake />
       {editor && <Editor state={editor} />}
       {apptEditor && <ApptEditor appt={apptEditor.appt} />}
       {weightEditor && <WeightEditor weight={weightEditor.weight} />}

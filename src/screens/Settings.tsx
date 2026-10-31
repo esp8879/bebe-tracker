@@ -209,6 +209,9 @@ export function Settings() {
               <TextSetting key={`se-${sleepWin.end}`} label="until" type="time" value={sleepWin.end} onSave={(v) => v && void saveSettings({ night_sleep: { ...sleepWin, end: v } })} />
             </div>
             <div className="muted small">A sleep that starts in this window is logged as night sleep, anything else as a nap, and you can flip it when you log. Bedtime is the first night sleep of each evening.</div>
+            <Field label="Marked Awake card when she wakes">
+              <Seg<'on' | 'off'> options={[{ value: 'on', label: 'On' }, { value: 'off', label: 'Off' }]} value={settings.marked_awake === false ? 'off' : 'on'} onChange={(v) => void saveSettings({ marked_awake: v === 'on' })} />
+            </Field>
           </>
         ) : (
           <div className="muted small">Sleep is hidden on Today, in the dock and in the Summary table. Past sleeps stay in All entries and the exports.</div>

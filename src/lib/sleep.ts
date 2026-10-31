@@ -1,4 +1,4 @@
-import type { Entry, Sleep } from '../types';
+import type { Entry, Sleep, SleepPlace, SleepStop } from '../types';
 import { isActive } from './summary';
 import { dayOf, fromLocal, localParts } from './time';
 import { isNightAt } from './timers';
@@ -155,4 +155,24 @@ export function weekSummary(entries: Entry[], keys: string[], now: number, windo
 export function loggedNights(entries: Entry[], now: number, days = 14): number {
   const keys = new Set(sleepsOf(entries).filter((s) => s.night && s.at > now - days * 86_400_000).map((s) => nightKey(s.at)));
   return keys.size;
+}
+
+/** Where she is (or ended up). */
+export const placeNow = (s: Sleep): SleepPlace | null => (s.places?.length ? s.places[s.places.length - 1].place : null);
+
+/** "bassinet → contact", or "" when no place was logged. */
+export const placeTrail = (s: Sleep): string => (s.places ?? []).map((p) => p.place).join(' → ');
+
+/** Where the last nap (or night sleep) started, as the default for the next one. */
+export function defaultPlace(entries: Entry[], night: boolean): SleepPlace | null {
+  const list = sleepsOf(entries).filter((s) => s.night === night && s.places?.length);
+  return list.length ? list[list.length - 1].places![0].place : null;
+}
+
+/** Split a sleep into place segments [from, to, place|null], clipped to [a, b]. */
+export function placeSegments(s: Sleep, now: number): [number, number, SleepPlace | null][] {
+  const end = s.end_at ?? now;
+  const stops: SleepStop[] = s.places?.length ? s.places : [{ at: s.at, place: null as unknown as SleepPlace }];
+  return stops.map((p, i) => [i === 0 ? s.at : Math.max(s.at, p.at), i + 1 < stops.length ? Math.min(end, stops[i + 1].at) : end, (p.place ?? null) as SleepPlace | null] as [number, number, SleepPlace | null])
+    .filter(([a, b]) => b > a);
 }

@@ -60,7 +60,7 @@ export function demoData(now = Date.now()): { settings: Settings; entries: Entry
     const bed = at(back, 19, 45) - Math.round(35 * t) * M;
     const first = bed + (135 + Math.round(85 * t)) * M;
     const nightFeedsAt: number[] = [bed - 20 * M];
-    sleeps.push([bed, first, true, back % 4 === 0 ? ['rocking'] : back % 4 === 1 ? ['held', 'pacifier'] : back % 4 === 2 ? ['bjorn'] : undefined]);
+    sleeps.push([bed, first, true, back % 4 === 0 ? ['held'] : back % 4 === 1 ? ['held', 'pacifier'] : back % 4 === 2 ? ['bjorn'] : undefined]);
     let t0 = first + 30 * M;
     nightFeedsAt.push(first + 5 * M);
     const chunks = back > 7 ? [125, 115, 120] : [240, 150];
@@ -77,7 +77,12 @@ export function demoData(now = Date.now()): { settings: Settings; entries: Entry
   let lastEnd = 0;
   for (const [start, end, night, how] of sleeps.sort((a, b) => a[0] - b[0])) {
     if (end > now - 10 * M) continue;
-    push({ type: 'sleep', end_at: end, night, ...(how ? { how } : {}) }, start, night ? 'mom' : 'dad');
+    // Nights in the bassinet, now and then moved to contact near the end; naps by time of day.
+    const h = new Date(start).getHours();
+    const places = night
+      ? (Math.round(start / 3_600_000) % 4 === 0 ? [{ at: start, place: 'bassinet' }, { at: end - 40 * M, place: 'contact' }] : [{ at: start, place: 'bassinet' }])
+      : h < 11 ? [{ at: start, place: 'contact' }] : h < 15 ? [{ at: start, place: 'bassinet' }, { at: start + 50 * M, place: 'contact' }] : [{ at: start, place: 'stroller' }];
+    push({ type: 'sleep', end_at: end, night, places, ...(how ? { how } : {}) }, start, night ? 'mom' : 'dad');
     lastEnd = Math.max(lastEnd, end);
   }
   if (lastEnd < now - 2 * H - 10 * M) push({ type: 'sleep', end_at: now - 50 * M, night: false }, now - 2 * H, 'dad');

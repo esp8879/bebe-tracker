@@ -4,9 +4,11 @@ import { useUI, type EditorState } from '../ui';
 import {
   FEED_KINDS, STOOL_COLORS, STOOL_AMOUNTS, label,
   type Feed, type Diaper, type Pump, type MomMed, type Entry,
-  type FeedKind, type Side, type Latch, type StoolColor, type StoolAmount, type Med, type Sleep, type SleepHow, SLEEP_HOW,
+  type FeedKind, type Side, type Latch, type StoolColor, type StoolAmount, type Med, type Sleep, type SleepHow, SLEEP_HOW, SLEEP_PLACES, type SleepPlace, type SleepStop,
 } from '../types';
-import { isNightSleepAt, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
+import { isNightSleepAt, DEFAULT_NIGHT_SLEEP, defaultPlace } from '../lib/sleep';
+import { fmtTime } from '../lib/time';
+import { announceAwake } from './MarkedAwake';
 import { fmtDur } from '../lib/time';
 import { Sheet, Chips, Seg, Field, NumberPick, TimeField, NotesField } from './common';
 import { volumeUnit, mlToOz, ozToMl } from '../lib/units';
@@ -167,20 +169,58 @@ export function MedEditor({ entry, preset }: { entry?: MomMed; preset?: { med?: 
 
 export function SleepEditor({ entry }: { entry?: Sleep }) {
   const b = useEditorBase(entry);
-  const { settings } = useStore();
+  const { settings, entries, update } = useStore();
+  const { closeEditor, toast } = useUI();
   const window = settings.night_sleep ?? DEFAULT_NIGHT_SLEEP;
   const [nightTouched, setNightTouched] = useState(!!entry);
   const [nightPick, setNight] = useState<boolean>(entry?.night ?? isNightSleepAt(b.at, window));
   const night = nightTouched ? nightPick : isNightSleepAt(b.at, window);
   const [how, setHow] = useState<SleepHow[]>(entry?.how ?? []);
   const [endAt, setEndAt] = useState<number | null>(entry?.end_at ?? null);
+  // Where she slept: a timeline. New sleeps start where the last nap (or night) started.
+  const [stops, setStops] = useState<SleepStop[]>(() => entry?.places ?? []);
+  const [placeTouched, setPlaceTouched] = useState(!!entry);
+  const suggested = placeTouched ? null : defaultPlace(entries, night);
+  const startPlace: SleepPlace | null = stops[0]?.place ?? suggested;
+  const pickStart = (p: SleepPlace) => { setPlaceTouched(true); setStops((cur) => (cur[0]?.place === p && !suggested ? cur.slice(1) : [{ at: b.at, place: p }, ...cur.slice(1)])); };
+  const placesOut = (): SleepStop[] | undefined => {
+    const list = startPlace ? [{ at: b.at, place: startPlace }, ...stops.slice(1)] : [];
+    return list.length ? list : undefined;
+  };
+  const asleepNow = !!entry && entry.end_at == null;
+  const moveTo = (p: SleepPlace) => {
+    const at = Date.now();
+    const base = entry!.places?.length ? entry!.places : startPlace ? [{ at: entry!.at, place: startPlace }] : [];
+    void update(entry!.id, { places: [...base, { at, place: p }] } as Partial<Sleep>);
+    closeEditor();
+    toast(`Moved to ${p} at ${fmtTime(at)}`);
+  };
   const toggleHow = (h: SleepHow) => setHow((cur) => (cur.includes(h) ? cur.filter((x) => x !== h) : [...cur.filter((x) => x !== 'own'), h]));
   const bad = endAt != null && endAt <= b.at;
-  const save = (end = endAt) => b.save({ type: 'sleep', night, how: how.length ? how : undefined, end_at: end });
+  const save = (end = endAt) => b.save({ type: 'sleep', night, how: how.length ? how : undefined, places: placesOut(), end_at: end });
   return (
     <Sheet title={b.editing ? (entry?.end_at == null ? 'Asleep' : 'Edit sleep') : 'Sleep'} onClose={b.close}>
       <TimeField value={b.at} onChange={b.setAt} label="Fell asleep" />
       <Seg options={[{ value: 'nap', label: 'Nap' }, { value: 'night', label: 'Night' }]} value={night ? 'night' : 'nap'} onChange={(v) => { setNightTouched(true); setNight(v === 'night'); }} />
+      <Field label={stops.length > 1 ? 'Where she fell asleep' : 'Where'}>
+        <div className="chips">
+          {SLEEP_PLACES.map((o) => <button key={o.value} type="button" className={`chip${startPlace === o.value ? ' on' : ''}`} aria-pressed={startPlace === o.value} onClick={() => pickStart(o.value)}>{o.label}</button>)}
+        </div>
+      </Field>
+      {stops.length > 1 && (
+        <div className="moves">
+          {stops.slice(1).map((m, i) => (
+            <div key={m.at} className="move"><span>Moved to <b>{m.place}</b> at {fmtTime(m.at)}</span><button type="button" className="btn ghost" onClick={() => setStops((cur) => cur.filter((_, k) => k !== i + 1))} aria-label={`Remove the move to ${m.place}`}>Remove</button></div>
+          ))}
+        </div>
+      )}
+      {asleepNow && (
+        <Field label="Moved her?">
+          <div className="chips">
+            {SLEEP_PLACES.filter((o) => o.value !== (entry!.places?.length ? entry!.places[entry!.places.length - 1].place : startPlace)).map((o) => <button key={o.value} type="button" className="chip" onClick={() => moveTo(o.value)}>To {o.label.toLowerCase()} now</button>)}
+          </div>
+        </Field>
+      )}
       <Field label="Help falling asleep — none means on her own">
         <div className="chips">
           {SLEEP_HOW.map((o) => <button key={o.value} type="button" className={`chip${how.includes(o.value) ? ' on' : ''}`} aria-pressed={how.includes(o.value)} onClick={() => toggleHow(o.value)}>{o.label}</button>)}
@@ -192,7 +232,7 @@ export function SleepEditor({ entry }: { entry?: Sleep }) {
           {bad ? <div className="red small">Woke up has to be after she fell asleep.</div> : <div className="muted small">Slept {fmtDur(endAt - b.at)}</div>}
         </>
       ) : b.editing ? (
-        <button type="button" className="btn block" onClick={() => save(Date.now())}>Woke up now</button>
+        <button type="button" className="btn block" onClick={() => { const at = Date.now(); save(at); if (settings.marked_awake !== false && entry) announceAwake({ id: entry.id, at, sleptMs: at - entry.at, place: stops.length ? stops[stops.length - 1].place : startPlace }); }}>Woke up now</button>
       ) : (
         <button type="button" className="btn ghost" style={{ alignSelf: 'flex-start', minHeight: 0, padding: 0 }} onClick={() => setEndAt(Date.now())}>Already awake? Add when she woke</button>
       )}
