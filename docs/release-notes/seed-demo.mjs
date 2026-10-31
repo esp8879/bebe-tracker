@@ -71,8 +71,8 @@ for (const [start, end, night, how] of S.sort((a, b) => a[0] - b[0])) {
   if (end > now - 10 * M) continue;
   const h = new Date(start - 4 * H).getUTCHours();
   const places = night
-    ? (Math.round(start / H) % 4 === 0 ? [{ at: start, place: 'bassinet' }, { at: end - 40 * M, place: 'contact' }] : [{ at: start, place: 'bassinet' }])
-    : h < 11 ? [{ at: start, place: 'contact' }] : h < 15 ? [{ at: start, place: 'bassinet' }, { at: start + 50 * M, place: 'contact' }] : [{ at: start, place: 'stroller' }];
+    ? [{ at: start, place: Math.round(start / H) % 4 === 0 ? 'contact' : 'bassinet' }]
+    : [{ at: start, place: h < 11 ? 'contact' : h < 15 ? 'bassinet' : 'stroller' }];
   E.push({ type: 'sleep', end_at: end, night, places, ...(how ? { how } : {}), ...base(start, night ? 'mom' : 'dad') });
   lastEnd = Math.max(lastEnd, end);
 }

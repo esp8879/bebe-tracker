@@ -77,11 +77,11 @@ export function demoData(now = Date.now()): { settings: Settings; entries: Entry
   let lastEnd = 0;
   for (const [start, end, night, how] of sleeps.sort((a, b) => a[0] - b[0])) {
     if (end > now - 10 * M) continue;
-    // Nights in the bassinet, now and then moved to contact near the end; naps by time of day.
+    // Nights mostly in the bassinet, now and then contact; naps by time of day.
     const h = new Date(start).getHours();
     const places = night
-      ? (Math.round(start / 3_600_000) % 4 === 0 ? [{ at: start, place: 'bassinet' }, { at: end - 40 * M, place: 'contact' }] : [{ at: start, place: 'bassinet' }])
-      : h < 11 ? [{ at: start, place: 'contact' }] : h < 15 ? [{ at: start, place: 'bassinet' }, { at: start + 50 * M, place: 'contact' }] : [{ at: start, place: 'stroller' }];
+      ? [{ at: start, place: Math.round(start / 3_600_000) % 4 === 0 ? 'contact' : 'bassinet' }]
+      : [{ at: start, place: h < 11 ? 'contact' : h < 15 ? 'bassinet' : 'stroller' }];
     push({ type: 'sleep', end_at: end, night, places, ...(how ? { how } : {}) }, start, night ? 'mom' : 'dad');
     lastEnd = Math.max(lastEnd, end);
   }

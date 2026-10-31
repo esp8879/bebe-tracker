@@ -220,10 +220,6 @@ table.compare td { padding: 7px 0; border-top: 1px solid var(--border); text-ali
 table.compare td:first-child { text-align: left; color: var(--muted); }
 table.compare td:nth-child(2) { font-weight: 700; }
 
-.moves { display: flex; flex-direction: column; gap: 4px; margin-top: -4px; }
-.move { display: flex; align-items: center; justify-content: space-between; font-size: 15px; color: var(--muted); }
-.move b { color: var(--text); font-weight: 600; }
-.move .btn { min-height: 0; padding: 4px 0; font-size: 14px; }
 
 /* "Marked Awake": an homage to the old safety check-in card. Its own type and colours, on purpose. */
 .awake-scrim { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(6, 7, 12, .45); }
