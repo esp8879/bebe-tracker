@@ -186,14 +186,14 @@ export function SleepEditor({ entry }: { entry?: Sleep }) {
   const save = (end = endAt) => b.save({ type: 'sleep', night, how: how.length ? how : undefined, places: place ? [{ at: b.at, place }] : undefined, end_at: end });
   return (
     <Sheet title={b.editing ? (entry?.end_at == null ? 'Asleep' : 'Edit sleep') : 'Sleep'} onClose={b.close}>
-      <TimeField value={b.at} onChange={b.setAt} label="Fell asleep" />
+      <TimeField value={b.at} onChange={b.setAt} label="When" />
       <Seg options={[{ value: 'nap', label: 'Nap' }, { value: 'night', label: 'Night' }]} value={night ? 'night' : 'nap'} onChange={(v) => { setNightTouched(true); setNight(v === 'night'); }} />
-      <Field label="Where — if she moved, where she slept most">
+      <Field label="Where">
         <div className="chips">
           {SLEEP_PLACES.map((o) => <button key={o.value} type="button" className={`chip${place === o.value ? ' on' : ''}`} aria-pressed={place === o.value} onClick={() => pickPlace(o.value)}>{o.label}</button>)}
         </div>
       </Field>
-      <Field label="Help falling asleep — none means on her own">
+      <Field label="Help?">
         <div className="chips">
           {SLEEP_HOW.map((o) => <button key={o.value} type="button" className={`chip${how.includes(o.value) ? ' on' : ''}`} aria-pressed={how.includes(o.value)} onClick={() => toggleHow(o.value)}>{o.label}</button>)}
         </div>
