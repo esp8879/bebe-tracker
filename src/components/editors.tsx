@@ -193,7 +193,7 @@ export function SleepEditor({ entry }: { entry?: Sleep }) {
           {SLEEP_PLACES.map((o) => <button key={o.value} type="button" className={`chip${place === o.value ? ' on' : ''}`} aria-pressed={place === o.value} onClick={() => pickPlace(o.value)}>{o.label}</button>)}
         </div>
       </Field>
-      <Field label="Help?">
+      <Field label="Help">
         <div className="chips">
           {SLEEP_HOW.map((o) => <button key={o.value} type="button" className={`chip${how.includes(o.value) ? ' on' : ''}`} aria-pressed={how.includes(o.value)} onClick={() => toggleHow(o.value)}>{o.label}</button>)}
         </div>
