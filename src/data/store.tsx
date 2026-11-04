@@ -26,6 +26,13 @@ export interface Store {
   /** …and more than ~15 s: probably a stale connection or no signal. */
   stuck: boolean;
   online: boolean;
+  /**
+   * 'checking': opened after 20+ minutes away and the server hasn't confirmed yet, so Today shimmers its numbers.
+   * 'cached': the server didn't answer within 4 s, so Today shows the saved data with an "as of" badge.
+   */
+  freshness: 'fresh' | 'checking' | 'cached';
+  /** When the server last confirmed the entries (persisted per device). */
+  syncedAt: number | null;
   add: (e: NewEntry) => Promise<string>;
   update: (id: string, patch: Partial<Entry>) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -58,6 +65,10 @@ export const useStore = () => {
   return s;
 };
 
+const STALE_AFTER = 20 * 60_000;
+const lsNum = (k: string) => { try { return Number(localStorage.getItem(k)) || 0; } catch { return 0; } };
+const lsSet = (k: string, v: number) => { try { localStorage.setItem(k, String(v)); } catch { /* ignore */ } };
+
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
 
 export function StoreProvider({ hid, children }: { hid: string; children: ReactNode }) {
@@ -74,6 +85,21 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   const [pending, setPending] = useState(false);
   const [stuck, setStuck] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
+  // Freshness: after 20+ minutes away the saved copy may be hours old, so hold the numbers until the server confirms.
+  const [checking, setChecking] = useState(() => Date.now() - lsNum('bebe.lastSeen') > STALE_AFTER);
+  const [cachedOnly, setCachedOnly] = useState(false);
+  const [syncedAt, setSyncedAt] = useState<number | null>(() => lsNum('bebe.syncedAt') || null);
+  useEffect(() => {
+    if (!checking) return;
+    const t = window.setTimeout(() => { setChecking(false); setCachedOnly(true); }, 4000);
+    return () => window.clearTimeout(t);
+  }, [checking]);
+  useEffect(() => {
+    const seen = () => { if (document.visibilityState === 'visible') lsSet('bebe.lastSeen', Date.now()); };
+    seen();
+    const id = window.setInterval(seen, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
   const seededRef = useRef(false);
 
   const entriesCol = useMemo(() => collection(db, 'households', hid, 'entries'), [hid]);
@@ -94,7 +120,9 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   useEffect(() => {
     let hiddenAt = 0;
     const onVis = async () => {
-      if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+      if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); lsSet('bebe.lastSeen', hiddenAt); return; }
+      if (hiddenAt && Date.now() - hiddenAt > STALE_AFTER) setChecking(true);
+      lsSet('bebe.lastSeen', Date.now());
       if (hiddenAt && Date.now() - hiddenAt > 10_000) {
         try { await disableNetwork(db); await enableNetwork(db); } catch { /* ignore */ }
       }
@@ -117,6 +145,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     return onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
       setRecentEntries(snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as Entry).filter((e) => ENTRY_TYPES.includes(e.type)));
       setPendingRaw(snap.metadata.hasPendingWrites);
+      if (!snap.metadata.fromCache) { const t = Date.now(); setChecking(false); setCachedOnly(false); setSyncedAt(t); lsSet('bebe.syncedAt', t); }
     }, (err) => console.error('entries listener', err));
   }, [entriesCol, windowStart]);
   const olderInFlight = useRef<Promise<Entry[]> | null>(null);
@@ -244,10 +273,10 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   }, [entriesCol, weightsCol, apptsCol, settingsDoc]);
 
   const value = useMemo<Store>(() => ({
-    hid, demo: false, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, add, update, remove, restore, saveSettings,
+    hid, demo: false, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, freshness: checking ? 'checking' : cachedOnly ? 'cached' : 'fresh', syncedAt, add, update, remove, restore, saveSettings,
     appointments, addAppt, updateAppt, removeAppt, restoreAppt,
     weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold,
-  }), [hid, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, add, update, remove, restore, saveSettings, appointments, addAppt, updateAppt, removeAppt, restoreAppt, weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold]);
+  }), [hid, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, checking, cachedOnly, syncedAt, add, update, remove, restore, saveSettings, appointments, addAppt, updateAppt, removeAppt, restoreAppt, weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

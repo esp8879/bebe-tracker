@@ -13,6 +13,9 @@ import { NightsCard } from '../components/SleepDiary';
 import { placeTrail, openSleep, lastWake, sleepMsOnDay, napsOnDay, nightStats, nightForToday, loggedNights, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
 import { Icon } from '../components/Icon';
 
+/** "2:04 PM", or "Mon 2:04 PM" when the saved data is from another day. */
+const asOf = (t: number, now: number) => (dayOf(t) === dayOf(now) ? fmtTime(t) : fmtWhen(t, now));
+
 /** One line of text that steps its font size down until it fits its box, so the appointment date never wraps. */
 function FitLine({ children, max, min, style }: { children: string; max: number; min: number; style?: CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -42,7 +45,7 @@ function FitLine({ children, max, min, style }: { children: string; max: number;
 }
 
 export function Today() {
-  const { entries, settings, pending, stuck, online, appointments, weights, demo } = useStore();
+  const { entries, settings, pending, stuck, online, appointments, weights, demo, freshness, syncedAt } = useStore();
   const { openEditor, openWeightEditor } = useUI();
   const { setTab, setSummaryMode } = useNav();
   const now = useNow(15_000);
@@ -94,12 +97,17 @@ export function Today() {
   const feedClass = !feed || feed.status === 'ok' ? '' : feed.status === 'due' ? 'amber' : 'red';
 
   return (
-    <div className={`screen today${roomy ? ' roomy' : ''}${snug ? ' snug' : ''}`}>
+    <div className={`screen today${roomy ? ' roomy' : ''}${snug ? ' snug' : ''}${freshness === 'checking' ? ' checking' : ''}`} aria-busy={freshness === 'checking'}>
       <div className="row">
         <h1 style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>{settings.baby_name} <span className="muted small" style={{ fontWeight: 500 }}>Day {ageDaysOnDay(dob, today)} · {age.days}d {age.hours}h old</span></h1>
         <div className="stack" style={{ alignItems: 'flex-end', gap: 2 }}>
-          {demo ? <span className="badge demo">Demo</span> : <div className="mono muted">{fmtTime(now)}</div>}
-          {!online ? <span className="badge warn">offline</span> : stuck ? <span className="badge warn">still syncing…</span> : pending ? <span className="badge">syncing…</span> : null}
+          {/* One slot: a status badge takes the clock's place, so the header never grows and nothing below shifts. */}
+          {demo ? <span className="badge demo">Demo</span>
+            : !online ? <span className="badge warn">offline{syncedAt ? ` · as of ${asOf(syncedAt, now)}` : ''}</span>
+            : freshness === 'cached' && syncedAt ? <span className="badge">as of {asOf(syncedAt, now)}</span>
+            : stuck ? <span className="badge warn">still syncing…</span>
+            : pending ? <span className="badge">syncing…</span>
+            : <div className="mono muted">{fmtTime(now)}</div>}
         </div>
       </div>
 

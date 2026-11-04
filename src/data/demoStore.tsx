@@ -59,7 +59,7 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
   const day = useMemo(() => entries.map((e) => ({ ...e, day: dayOf(e.at) })), [entries, settings.tz]);
 
   const value = useMemo<Store>(() => ({
-    hid: DEMO_HID, demo: true, who, setWho, entries: day, settings, settingsLoaded: true, pending: false, stuck: false, online: true,
+    hid: DEMO_HID, demo: true, who, setWho, entries: day, settings, settingsLoaded: true, pending: false, stuck: false, online: true, freshness: 'fresh', syncedAt: null,
     add, update, remove, restore, saveSettings,
     appointments, addAppt, updateAppt, removeAppt, restoreAppt,
     weights, addWeight, updateWeight, removeWeight, restoreWeight,
