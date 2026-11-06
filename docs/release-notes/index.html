@@ -85,13 +85,13 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Release notes · Sep 12 – Nov 3, 2026</div>
+    <div class="eyebrow">Release notes · Sep 12 – Nov 5, 2026</div>
     <svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="110" fill="#12131a"/><circle cx="256" cy="256" r="172" fill="none" stroke="#ff9ac2" stroke-width="36"/><g transform="translate(124 124) scale(11)" fill="none" stroke="#ff9ac2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.25 5.5V4.5a1.75 1.75 0 0 1 3.5 0v1"/><rect x="8.75" y="5.5" width="6.5" height="2.75" rx="1"/><path d="M8.25 8.25h7.5v9.5a3 3 0 0 1-3 3h-1.5a3 3 0 0 1-3-3z"/><path d="M8.25 12h2.25M8.25 15h2.25"/></g></svg>
     <h1>bébé <span>tracker</span></h1>
     <p class="lede">A shared logbook for a newborn's feeds, diapers, pumping and mom's meds. Two phones, one live dataset, built for one-handed use at 3 am. This page follows how it changed over its first ten days.</p>
     <div class="facts">
-      <span><b>60</b> releases</span>
-      <span><b>53</b> days</span>
+      <span><b>61</b> releases</span>
+      <span><b>55</b> days</span>
       <span><b>5</b> tabs</span>
       <span><b>45</b> automated tests</span>
       <span>Live at <a href="https://bebe.fyi">bebe.fyi</a></span>
@@ -505,8 +505,21 @@
           <li><b>Steadier header.</b> Status badges (syncing, offline, as of) now take the clock's spot instead of stacking under it, so nothing below jumps.</li>
         </ul>
         <div class="shots">
-          <figure class="phone"><div class="screen"><img src="shots/today-checking.png" alt="Today while it checks for the latest data: the cards and labels in place, with soft placeholder bars where the numbers will be." loading="lazy"></div><figcaption><b>Checking</b>Placeholders the size of the numbers.</figcaption></figure>
+          <figure class="phone"><div class="screen"><img src="shots/today-checking.png" alt="Today while it checks for the latest data: the cards and labels in place, with soft placeholder bars where the numbers will be." loading="lazy"></div><figcaption><b>Checking</b>Placeholders while it catches up (evened out in 1.23).</figcaption></figure>
           <figure class="phone"><div class="screen"><img src="shots/today-cached.png" alt="Today showing saved data with a small as-of badge in the header." loading="lazy"></div><figcaption><b>Weak signal</b>"As of" where the clock was.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="release">
+      <div class="stamp"><div class="ver">1.23</div><div class="when">Thu Nov 5</div></div>
+      <div class="body">
+        <h2>A calmer shimmer</h2>
+        <ul class="notes">
+          <li><b>Even bars while it loads.</b> The placeholders used to trace the shape of each number, so the screen looked patchy. Now every line is a full-width bar, including the next appointment, while icons and labels stay in place.</li>
+        </ul>
+        <div class="shots">
+          <figure class="phone"><div class="screen"><img src="shots/today-checking.png" alt="Today while it checks for the latest data: icons and labels in place, with even full-width shimmering bars where the numbers will be." loading="lazy"></div><figcaption><b>Checking</b>Even bars, same layout.</figcaption></figure>
         </div>
       </div>
     </article>

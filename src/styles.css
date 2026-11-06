@@ -234,18 +234,21 @@ table.compare td:nth-child(2) { font-weight: 700; }
   @keyframes awake-in { from { transform: scale(.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 }
 
-/* Today while checking for fresh data (opened after 20+ min away): values become shimmering placeholders the same size
-   as the text they hide, labels and layout stay put, then the real numbers fade in. */
-.screen.today .timer .grow > span, .screen.today .timer .due, .screen.today .stat .v, .screen.today > .card.compact > .small, .screen.today .duo .card:first-child > div { transition: color .3s ease; }
+/* Today while checking for fresh data (opened after 20+ min away): values become uniform shimmering bars,
+   labels and layout stay put, then the real numbers fade in. */
+.screen.today .timer .grow > span, .screen.today .timer .due, .screen.today .stat .v, .screen.today > .card.compact > .small, .screen.today .duo .card > div { transition: color .3s ease; }
 .screen.today.checking .timer .grow > span, .screen.today.checking .timer .due, .screen.today.checking .stat .v,
-.screen.today.checking > .card.compact > .small, .screen.today.checking .duo .card:first-child > div {
+.screen.today.checking > .card.compact > .small, .screen.today.checking .duo .card > div {
   color: transparent !important; border-radius: 6px; background: linear-gradient(90deg, var(--card2) 25%, #353950 50%, var(--card2) 75%) 0 0 / 300% 100%;
   -webkit-box-decoration-break: clone; box-decoration-break: clone; animation: shimmer 1.4s ease-in-out infinite;
 }
 .screen.today.checking .timer .due { border-color: transparent; }
-/* Placeholders hug the text they stand in for, rather than filling the row */
-.screen.today.checking .timer .grow > span { align-self: flex-start; max-width: 100%; }
-.screen.today.checking > .card.compact > .small, .screen.today.checking .duo .card:first-child > div { width: fit-content; max-width: 100%; }
+/* Uniform bars: every line is full width whatever its text, slimmed so lines don't touch, without changing the layout. */
+.screen.today.checking .timer .grow > span { align-self: stretch; width: 100%; transform: scaleY(.72); }
+.screen.today.checking > .card.compact > .small { width: 100%; transform: scaleY(.72); }
+.screen.today.checking .stat .v { width: 100%; }
+.screen.today.checking .timer .due { min-width: 96px; white-space: nowrap; flex-shrink: 0; }
+.screen.today.checking .duo .card > div { width: 100%; transform: scaleY(.76); }
 .screen.today.checking .duo .card:first-child svg, .screen.today.checking .swatch { visibility: hidden; }
 @keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .screen.today.checking * { animation: none !important; } }

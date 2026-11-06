@@ -19,7 +19,7 @@ No accounts. The household id in the URL path (`/h/<24+ char token>`, legacy `#h
 - The entries listener is scoped to the last 30 days (`where at >=`); older entries load on demand via `loadOlder()` (Summary button, exports). `day` is recomputed on read from `at` in the household tz.
 - Export (CSV/JSON) and delete-household live in Settings (`src/lib/export.ts`, `deleteHousehold` in the store). Feedback address in `src/config.ts`.
 - Default settings are written by the first client that sees a server-confirmed empty settings doc. No seed entries.
-- Firestore persistent cache handles offline queueing; `snapshot.metadata.hasPendingWrites` drives the sync badge. `store.freshness`: after 20+ min away (`bebe.lastSeen` in localStorage) Today is `checking` (values shimmer, layout stays) until an entries snapshot arrives with `fromCache === false`; after 4 s it falls back to `cached` and the header shows "as of 2:04 PM" (`syncedAt`) in the clock's slot.
+- Firestore persistent cache handles offline queueing; `snapshot.metadata.hasPendingWrites` drives the sync badge. `store.freshness`: after 20+ min away (`bebe.lastSeen` in localStorage) Today is `checking` (values become uniform full-width shimmering bars; icons, labels and layout stay) until an entries snapshot arrives with `fromCache === false`; after 4 s it falls back to `cached` and the header shows "as of 2:04 PM" (`syncedAt`) in the clock's slot.
 
 ## Commits
 The repo is public (github.com/esp8879/bebe-tracker). Commit as `esp8879 <6955316+esp8879@users.noreply.github.com>` with no Co-Authored-By or other AI attribution lines. Never push the local `private-history` branch.
