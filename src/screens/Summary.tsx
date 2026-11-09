@@ -8,7 +8,7 @@ import { Chips, Seg } from '../components/common';
 import { volValue, volLabel } from '../lib/units';
 import { useNav, type SummaryMode } from '../App';
 import { SleepDiary } from '../components/SleepDiary';
-import { sleepMsOnDay, napsOnDay, nightStats } from '../lib/sleep';
+import { sleepMsOnDay, napsOnDay, nightStats, longestOnDay } from '../lib/sleep';
 import { fmtDur, fmtTime } from '../lib/time';
 
 const FILTERS: { value: EntryType | 'all'; label: string }[] = [
@@ -53,7 +53,7 @@ function DaysView() {
                     return <>
                       <td>{total ? fmtDur(total) : '—'}</td>
                       <td>{napsOnDay(entries, d.day) || '—'}</td>
-                      <td>{n.longestMs ? fmtDur(n.longestMs) : '—'}</td>
+                      <td>{longestOnDay(entries, d.day, now) ? fmtDur(longestOnDay(entries, d.day, now)) : '—'}</td>
                       <td>{n.bedtime ? fmtTime(n.bedtime) : '—'}</td>
                     </>;
                   })()}

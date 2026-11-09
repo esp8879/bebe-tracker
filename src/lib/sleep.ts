@@ -177,3 +177,8 @@ export function placeSegments(s: Sleep, now: number): [number, number, SleepPlac
   return stops.map((p, i) => [i === 0 ? s.at : Math.max(s.at, p.at), i + 1 < stops.length ? Math.min(end, stops[i + 1].at) : end, (p.place ?? null) as SleepPlace | null] as [number, number, SleepPlace | null])
     .filter(([a, b]) => b > a);
 }
+
+/** The longest single sleep (nap or night) that started on this calendar day. A running sleep counts up to now. */
+export function longestOnDay(entries: Entry[], day: string, now: number): number {
+  return sleepsOf(entries).filter((s) => dayOf(s.at) === day).reduce((m, s) => Math.max(m, sleepMs(s, now)), 0);
+}

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Entry, Sleep } from '../types';
 import { fromNYLocal, setTimezone } from './time';
-import { openSleep, lastWake, nightKey, sleepMsOnDay, napsOnDay, nightStats, latestNightKey, isBedtime, isNightSleepAt, nightForToday, lastCompletedNight, currentNight, nightsBack, nightFeeds, avgEveningMinutes, fmtEveningMinutes, weekSummary, loggedNights, placeNow, placeTrail, defaultPlace, placeSegments } from './sleep';
+import { openSleep, lastWake, nightKey, sleepMsOnDay, napsOnDay, nightStats, latestNightKey, isBedtime, isNightSleepAt, nightForToday, lastCompletedNight, currentNight, nightsBack, nightFeeds, avgEveningMinutes, fmtEveningMinutes, weekSummary, loggedNights, placeNow, placeTrail, defaultPlace, placeSegments, longestOnDay } from './sleep';
 
 setTimezone('America/New_York');
 const H = 3_600_000, M = 60_000;
@@ -101,5 +101,13 @@ describe('sleep places', () => {
     expect(defaultPlace([plain], true)).toBeNull();
     expect(placeSegments(moved as Sleep, at(21, 0))).toEqual([[at(20, 13, 0), at(20, 14, 0), 'bassinet'], [at(20, 14, 0), at(20, 15, 0), 'contact']]);
     expect(placeSegments(plain as Sleep, at(21, 0))).toEqual([[at(20, 20, 0), at(20, 23, 0), null]]);
+  });
+});
+
+describe('longestOnDay', () => {
+  it('takes the longest sleep of any kind that started that day', () => {
+    const list = [sleep(at(20, 9, 0), at(20, 13, 30), false), sleep(at(20, 22, 0), at(21, 2, 0), true), sleep(at(21, 1, 0), at(21, 9, 0), true)];
+    expect(longestOnDay(list, '2026-10-20', at(21, 12))).toBe(4.5 * H);
+    expect(longestOnDay(list, '2026-10-21', at(21, 12))).toBe(8 * H);
   });
 });
