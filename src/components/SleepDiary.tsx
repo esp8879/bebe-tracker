@@ -3,9 +3,8 @@ import { useNow } from '../hooks';
 import { isActive } from '../lib/summary';
 import { dayOf, fmtDur, fromLocal } from '../lib/time';
 import {
-  DEFAULT_NIGHT_SLEEP, sleepMsOnDay, placeSegments, currentNight, lastCompletedNight, nightsBack, nightKey, sleepsOf, weekSummary, fmtEveningMinutes, loggedNights,
+  DEFAULT_NIGHT_SLEEP, sleepMsOnDay, currentNight, lastCompletedNight, nightsBack, nightKey, sleepsOf, weekSummary, fmtEveningMinutes, loggedNights,
 } from '../lib/sleep';
-import { SLEEP_HOW_LABEL } from '../types';
 
 const SPAN_START_H = 18, SPAN_H = 14; // each row runs 6 PM to 8 AM
 const TICKS = [{ h: 0, label: '6p' }, { h: 3, label: '9p' }, { h: 6, label: '12a' }, { h: 9, label: '3a' }, { h: 12, label: '6a' }];
@@ -59,20 +58,20 @@ export function SleepDiary() {
           const inRow = sleeps.filter((s) => s.at < span[1] && (s.end_at ?? now) > span[0]);
           const dots = feeds.filter((f) => f.at >= span[0] && f.at <= span[1] && f.at <= now);
           const first = sleeps.find((s) => s.night && nightKey(s.at) === key);
-          const how = first?.how?.map((h) => SLEEP_HOW_LABEL[h] ?? h).join(' + ');
+          void first;
           return (
             <div key={key} className="diary-row">
               <div className="diary-label">
                 <span>{key === tonight ? 'Tonight' : rowLabel(key)}</span>
-                {how && <span className="muted">{how}</span>}
+                
               </div>
               <div className="diary-track">
                 {TICKS.slice(1).map((t) => <i key={t.label} className="diary-grid" style={{ left: `${(t.h / SPAN_H) * 100}%` }} />)}
-                {inRow.flatMap((s) => placeSegments(s, now).map(([from, to, place], i) => {
-                  if (to < span[0] || from > span[1]) return null;
+                {inRow.map((s, i) => {
+                  const from = s.at, to = s.end_at ?? now;
                   const a = pct(Math.max(from, span[0]), span), b = pct(Math.min(to, span[1]), span);
-                  return <b key={`${s.id}-${i}`} className={`diary-bar${place ? ` p-${place}` : ''}${s.night ? '' : ' nap'}${s.end_at == null ? ' open' : ''}`} style={{ left: `${a}%`, width: `${Math.max(0.8, b - a)}%` }} />;
-                }))}
+                  return <b key={`${s.id}-${i}`} className={`diary-bar${s.night ? '' : ' nap'}${s.end_at == null ? ' open' : ''}`} style={{ left: `${a}%`, width: `${Math.max(0.8, b - a)}%` }} />;
+                })}
                 {dots.map((f) => <em key={f.id} className="diary-dot" style={{ left: `${pct(f.at, span)}%` }} />)}
               </div>
             </div>
