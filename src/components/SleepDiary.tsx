@@ -99,27 +99,23 @@ export function SleepDiary() {
   );
 }
 
-/** Today's small card: the first stretch of each of the last seven finished nights. */
+/** Today's trend card: last night's longest stretch, its 7-night average, and the average bedtime. */
 export function NightsCard({ onOpen }: { onOpen: () => void }) {
   const { entries, settings } = useStore();
   const now = useNow(60_000);
   const win = settings.night_sleep ?? DEFAULT_NIGHT_SLEEP;
-  const keys = nightsBack(lastCompletedNight(now, win), 7).reverse();
-  const vals = keys.map((k) => nightStats(entries, k, now).firstStretchMs);
-  const latest = vals[vals.length - 1];
-  const max = Math.max(...vals, 1);
-  const W = 150, H = 30, gap = 6, bw = (W - gap * (keys.length - 1)) / keys.length;
+  const last = lastCompletedNight(now, win);
+  const keys = nightsBack(last, 7);
+  const longest = keys.map((k) => nightStats(entries, k, now)).filter((s) => s.bedtime !== null).map((s) => s.longestMs);
+  const lastNight = nightStats(entries, last, now).longestMs;
+  const avg = longest.length ? longest.reduce((a, b) => a + b, 0) / longest.length : 0;
+  const bed = weekSummary(entries, keys, now, win).bedtimeMin;
   return (
-    <div className="card compact pressable" onClick={onOpen}>
-      <h3>Nights</h3>
-      <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.1 }}>{latest ? fmtDur(latest) : '—'}</div>
-      <div className="muted small">first stretch last night</div>
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-label="First stretch of each of the last seven nights" role="img" style={{ display: 'block', height: H }}>
-        {vals.map((v, i) => {
-          const h = v ? Math.max(3, (v / max) * H) : 2;
-          return <rect key={keys[i]} x={i * (bw + gap)} y={H - h} width={bw} height={h} rx={2} fill={v ? 'var(--t-sleep)' : 'var(--border)'} opacity={i === vals.length - 1 ? 1 : 0.55} />;
-        })}
-      </svg>
+    <div className="card compact pressable nights" onClick={onOpen}>
+      <h3>Longest stretch</h3>
+      <div className="kv"><span>Last night</span><b>{lastNight ? fmtDur(lastNight) : '—'}</b></div>
+      <div className="kv"><span>7-night avg</span><b>{avg ? fmtDur(avg) : '—'}</b></div>
+      <div className="kv"><span>Avg bedtime</span><b>{bed != null ? fmtEveningMinutes(bed) : '—'}</b></div>
     </div>
   );
 }

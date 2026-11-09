@@ -16,8 +16,12 @@ const put = async (path, id, data) => {
 };
 const TZ = 'America/New_York';
 const dayOf = (ms) => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(ms)).map(x => [x.type, x.value])); return `${p.year}-${p.month}-${p.day}`; };
-// New York wall time -> ms (EDT, UTC-4 in September)
-const ny = (y, m, d, hh, mm) => Date.UTC(y, m - 1, d, hh + 4, mm);
+
+const ny = (y, m, d, hh, mm) => { // New York wall time -> ms, honouring daylight saving
+  const guess = Date.UTC(y, m - 1, d, hh, mm);
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(guess)).map((x) => [x.type, x.value]));
+  return guess - (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - guess);
+};
 const now = Date.now();
 const H = 3_600_000, M = 60_000;
 let n = 0;
@@ -69,7 +73,7 @@ for (let back = 14; back >= 1; back--) {
 let lastEnd = 0;
 for (const [start, end, night, how] of S.sort((a, b) => a[0] - b[0])) {
   if (end > now - 10 * M) continue;
-  const h = new Date(start - 4 * H).getUTCHours();
+  const h = +new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', hourCycle: 'h23' }).format(new Date(start));
   const places = night
     ? [{ at: start, place: Math.round(start / H) % 4 === 0 ? 'contact' : 'bassinet' }]
     : [{ at: start, place: h < 11 ? 'contact' : h < 15 ? 'bassinet' : 'stroller' }];

@@ -10,7 +10,7 @@ import { MEDS, STOOL_COLORS, medLabel, allMeds, type Med } from '../types';
 import { volValue, volLabel, fmtMl, fmtWeight, fmtPct, pctChange } from '../lib/units';
 import { WeightChart } from '../components/WeightChart';
 import { NightsCard } from '../components/SleepDiary';
-import { placeTrail, openSleep, lastWake, sleepMsOnDay, napsOnDay, nightStats, nightForToday, loggedNights, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
+import { placeTrail, openSleep, lastWake, sleepMsOnDay, napsOnDay, nightStats, nightForToday, loggedNights, nightFeeds, lastCompletedNight, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
 import { Icon } from '../components/Icon';
 
 /** "2:04 PM", or "Mon 2:04 PM" when the saved data is from another day. */
@@ -234,7 +234,7 @@ export function Today() {
           {sleepOn && (<>
             <div className="stat"><span className="v">{fmtDur(sleptToday)}</span><span className="k">sleep today</span></div>
             <div className="stat"><span className="v">{naps}</span><span className="k">{naps === 1 ? 'nap' : 'naps'}</span></div>
-            <div className="stat"><span className="v">{night && night.longestMs ? fmtDur(night.longestMs) : '—'}</span><span className="k">{nightPick?.tonight ? 'tonight max' : 'last night max'}</span></div>
+            <div className="stat"><span className="v">{showNights ? nightFeeds(entries, lastCompletedNight(now, settings.night_sleep ?? DEFAULT_NIGHT_SLEEP), now, settings.night_sleep ?? DEFAULT_NIGHT_SLEEP).length : night && night.longestMs ? fmtDur(night.longestMs) : '—'}</span><span className="k">{showNights ? 'night feeds' : nightPick?.tonight ? 'tonight max' : 'last night max'}</span></div>
           </>)}
           {settings.diapers_enabled !== false && !sleepOn && (<>
             <div className="stat"><span className="v">{s.diapers}</span><span className="k">diapers</span></div>

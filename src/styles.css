@@ -252,3 +252,7 @@ table.compare td:nth-child(2) { font-weight: 700; }
 .screen.today.checking .duo .card:first-child svg, .screen.today.checking .swatch { visibility: hidden; }
 @keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .screen.today.checking * { animation: none !important; } }
+
+/* Nights trend card on Today */
+.card.nights .kv { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.card.nights .kv b { color: var(--text); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
