@@ -3,9 +3,8 @@ import { applyUpdate, updateReady } from './sw';
 import { StoreProvider, useStore } from './data/store';
 import { DemoStoreProvider } from './data/demoStore';
 import { DEMO_HID, DEMO_PATH } from './data/demo';
-import { openSleep, placeNow } from './lib/sleep';
-import { MarkedAwake, announceAwake } from './components/MarkedAwake';
-import { fmtDur, fmtTime } from './lib/time';
+import { openSleep } from './lib/sleep';
+import { MarkedAwake } from './components/MarkedAwake';
 import { resolveHid, createHousehold, joinHousehold } from './household';
 import { UIProvider, useUI } from './ui';
 import { Editor } from './components/editors';
@@ -64,16 +63,11 @@ function Shell() {
   const [summaryMode, setSummaryMode] = useState<SummaryMode>('days');
   // Each tab opens at the top; otherwise a long tab's scroll carries over and tucks the next one under the status bar.
   useEffect(() => { window.scrollTo(0, 0); }, [tab]);
-  const { editor, apptEditor, weightEditor, openEditor, toast } = useUI();
-  const { settings: tracked, entries, update } = useStore();
+  const { editor, apptEditor, weightEditor, openEditor } = useUI();
+  const { settings: tracked, entries } = useStore();
   const asleep = tracked.sleep_enabled !== false ? openSleep(entries) : null;
-  const wokeUp = () => {
-    if (!asleep) return;
-    const at = Date.now();
-    void update(asleep.id, { end_at: at });
-    if (tracked.marked_awake !== false) announceAwake({ id: asleep.id, at, sleptMs: at - asleep.at, place: placeNow(asleep) });
-    else toast(`Woke up at ${fmtTime(at)} after ${fmtDur(at - asleep.at)}`, () => { void update(asleep.id, { end_at: null }); });
-  };
+  // Woke up opens the wake-up sheet so both times can be set before saving.
+  const wokeUp = () => { if (asleep) openEditor('sleep', { entry: asleep }); };
   // Switched-off types leave the dock; the rest keep their order so positions stay familiar.
   const dock = [
     { key: 'feed', label: 'Feed', on: true, act: () => openEditor('feed') },

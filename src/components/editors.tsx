@@ -4,9 +4,10 @@ import { useUI, type EditorState } from '../ui';
 import {
   FEED_KINDS, STOOL_COLORS, STOOL_AMOUNTS, label,
   type Feed, type Diaper, type Pump, type MomMed, type Entry,
-  type FeedKind, type Side, type Latch, type StoolColor, type StoolAmount, type Med, type Sleep, type SleepHow, SLEEP_HOW, SLEEP_PLACES, type SleepPlace,
+  type FeedKind, type Side, type Latch, type StoolColor, type StoolAmount, type Med, type Sleep,
 } from '../types';
-import { isNightSleepAt, DEFAULT_NIGHT_SLEEP, defaultPlace } from '../lib/sleep';
+import { isNightSleepAt, DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
+import { fmtTime } from '../lib/time';
 import { announceAwake } from './MarkedAwake';
 import { fmtDur } from '../lib/time';
 import { Sheet, Chips, Seg, Field, NumberPick, TimeField, NotesField } from './common';
@@ -53,7 +54,7 @@ export function FeedEditor({ entry, preset }: { entry?: Feed; preset?: { kind?: 
   const [kind, setKind] = useState<FeedKind>(entry?.kind ?? preset?.kind ?? ((localStorage.getItem(LAST_KIND) as FeedKind | null) || 'bottle_formula'));
   const [side, setSide] = useState<Side | undefined>(entry?.side);
   const [duration, setDuration] = useState<number | undefined>(entry?.duration_min);
-  const [volume, setVolume] = useState<number | undefined>(entry?.volume_ml);
+  const [volume, setVolume] = useState<number | undefined>(entry ? entry.volume_ml : 100);
   const [latch, setLatch] = useState<Latch | undefined>(entry?.latch_quality);
   const breast = kind === 'breast';
   const canSave = breast ? true : volume != null && volume > 0;
@@ -73,7 +74,7 @@ export function FeedEditor({ entry, preset }: { entry?: Feed; preset?: { kind?: 
           <Field label="Latch (optional)"><Chips options={[{ value: 'good', label: 'Good' }, { value: 'ok', label: 'OK' }, { value: 'poor', label: 'Poor' }]} value={latch} onChange={setLatch} /></Field>
         </>
       ) : (
-        <VolumePick label="Volume" value={volume} onChange={setVolume} presetsMl={[60, 75, 90, 100]} />
+        <VolumePick label="Volume" value={volume} onChange={setVolume} presetsMl={[90, 100, 110, 120, 130]} />
       )}
       <TimeField value={b.at} onChange={b.setAt} label="Started at" />
       <NotesField value={b.notes} onChange={b.setNotes} />
@@ -168,48 +169,45 @@ export function MedEditor({ entry, preset }: { entry?: MomMed; preset?: { med?: 
 
 export function SleepEditor({ entry }: { entry?: Sleep }) {
   const b = useEditorBase(entry);
-  const { settings, entries } = useStore();
+  const { settings } = useStore();
+  const { toast } = useUI();
   const window = settings.night_sleep ?? DEFAULT_NIGHT_SLEEP;
   const [nightTouched, setNightTouched] = useState(!!entry);
   const [nightPick, setNight] = useState<boolean>(entry?.night ?? isNightSleepAt(b.at, window));
   const night = nightTouched ? nightPick : isNightSleepAt(b.at, window);
-  const [how, setHow] = useState<SleepHow[]>(entry?.how ?? []);
-  const [endAt, setEndAt] = useState<number | null>(entry?.end_at ?? null);
-  // Where she slept: one place (where she slept most). New sleeps start where the last nap (or night) did.
-  const [placePick, setPlacePick] = useState<SleepPlace | null>(() => entry?.places?.length ? entry.places[entry.places.length - 1].place : null);
-  const [placeTouched, setPlaceTouched] = useState(!!entry);
-  const place: SleepPlace | null = placeTouched ? placePick : defaultPlace(entries, night);
-  // Tapping the pre-picked default confirms it; tapping a place you chose yourself again clears it.
-  const pickPlace = (p: SleepPlace) => { setPlacePick(placeTouched && place === p ? null : p); setPlaceTouched(true); };
-  const toggleHow = (h: SleepHow) => setHow((cur) => (cur.includes(h) ? cur.filter((x) => x !== h) : [...cur.filter((x) => x !== 'own'), h]));
+  const asleep = !!entry && entry.end_at == null;
+  // Waking her: the wake time starts at now and both times can be nudged before saving.
+  const [endAt, setEndAt] = useState<number | null>(asleep ? Date.now() : entry?.end_at ?? null);
   const bad = endAt != null && endAt <= b.at;
-  const save = (end = endAt) => b.save({ type: 'sleep', night, how: how.length ? how : undefined, places: place ? [{ at: b.at, place }] : undefined, end_at: end });
+  // Where/help are no longer asked; whatever an older sleep carries is kept as is.
+  const save = (end = endAt) => b.save({ type: 'sleep', night, how: entry?.how, places: entry?.places, end_at: end });
+  const wake = () => {
+    if (endAt == null || !entry) return;
+    save(endAt);
+    if (settings.marked_awake === true) announceAwake({ id: entry.id, at: endAt, sleptMs: endAt - b.at, place: null });
+    else toast(`Woke up at ${fmtTime(endAt)} after ${fmtDur(endAt - b.at)}`);
+  };
   return (
-    <Sheet title={b.editing ? (entry?.end_at == null ? 'Asleep' : 'Edit sleep') : 'Sleep'} onClose={b.close}>
-      <TimeField value={b.at} onChange={b.setAt} label="When" />
+    <Sheet title={asleep ? 'Woke up' : b.editing ? 'Edit sleep' : 'Sleep'} onClose={b.close}>
+      <TimeField value={b.at} onChange={b.setAt} label="Fell asleep" />
       <Seg options={[{ value: 'nap', label: 'Nap' }, { value: 'night', label: 'Night' }]} value={night ? 'night' : 'nap'} onChange={(v) => { setNightTouched(true); setNight(v === 'night'); }} />
-      <Field label="Where">
-        <div className="chips">
-          {SLEEP_PLACES.map((o) => <button key={o.value} type="button" className={`chip${place === o.value ? ' on' : ''}`} aria-pressed={place === o.value} onClick={() => pickPlace(o.value)}>{o.label}</button>)}
-        </div>
-      </Field>
-      <Field label="Help">
-        <div className="chips">
-          {SLEEP_HOW.map((o) => <button key={o.value} type="button" className={`chip${how.includes(o.value) ? ' on' : ''}`} aria-pressed={how.includes(o.value)} onClick={() => toggleHow(o.value)}>{o.label}</button>)}
-        </div>
-      </Field>
       {endAt != null ? (
         <>
           <TimeField value={endAt} onChange={setEndAt} label="Woke up" />
           {bad ? <div className="red small">Woke up has to be after she fell asleep.</div> : <div className="muted small">Slept {fmtDur(endAt - b.at)}</div>}
         </>
-      ) : b.editing ? (
-        <button type="button" className="btn block" onClick={() => { const at = Date.now(); save(at); if (settings.marked_awake !== false && entry) announceAwake({ id: entry.id, at, sleptMs: at - entry.at, place }); }}>Woke up now</button>
       ) : (
         <button type="button" className="btn ghost" style={{ alignSelf: 'flex-start', minHeight: 0, padding: 0 }} onClick={() => setEndAt(Date.now())}>Already awake? Add when she woke</button>
       )}
-      {b.editing && <NotesField value={b.notes} onChange={b.setNotes} />}
-      <Actions onSave={() => save()} onDelete={b.editing ? b.del : undefined} disabled={bad} saveLabel={b.editing ? 'Save' : endAt != null ? 'Save sleep' : 'Start sleep'} />
+      {b.editing && !asleep && <NotesField value={b.notes} onChange={b.setNotes} />}
+      {asleep ? (
+        <>
+          <Actions onSave={wake} onDelete={b.del} disabled={bad} saveLabel="Woke up" />
+          <button type="button" className="btn ghost" style={{ minHeight: 0, padding: '4px 0' }} onClick={() => save(null)}>Still asleep · just save the time she fell asleep</button>
+        </>
+      ) : (
+        <Actions onSave={() => save()} onDelete={b.editing ? b.del : undefined} disabled={bad} saveLabel={b.editing ? 'Save' : endAt != null ? 'Save sleep' : 'Start sleep'} />
+      )}
     </Sheet>
   );
 }

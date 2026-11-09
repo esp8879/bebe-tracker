@@ -210,7 +210,7 @@ export function Settings() {
             </div>
             <div className="muted small">A sleep that starts in this window is logged as night sleep, anything else as a nap, and you can flip it when you log. Bedtime is the first night sleep of each evening.</div>
             <Field label="Marked Awake card when she wakes">
-              <Seg<'on' | 'off'> options={[{ value: 'on', label: 'On' }, { value: 'off', label: 'Off' }]} value={settings.marked_awake === false ? 'off' : 'on'} onChange={(v) => void saveSettings({ marked_awake: v === 'on' })} />
+              <Seg<'on' | 'off'> options={[{ value: 'on', label: 'On' }, { value: 'off', label: 'Off' }]} value={settings.marked_awake === true ? 'on' : 'off'} onChange={(v) => void saveSettings({ marked_awake: v === 'on' })} />
             </Field>
           </>
         ) : (

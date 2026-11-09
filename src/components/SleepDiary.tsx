@@ -78,8 +78,7 @@ export function SleepDiary() {
             </div>
           );
         })}
-        <div className="diary-key muted small"><b className="diary-bar" /> bassinet <b className="diary-bar p-contact" /> contact <b className="diary-bar p-stroller" /> stroller <em className="diary-dot" /> feed</div>
-        <div className="muted small">Faded bars are naps. Bars without a place logged are solid.</div>
+        <div className="diary-key muted small"><b className="diary-bar" /> sleep <b className="diary-bar nap" /> nap <em className="diary-dot" /> feed</div>
       </div>
 
       {thisWeek.nights > 0 && (
