@@ -92,7 +92,6 @@ export function SleepDiary() {
               <tr><td>Night feeds</td><td>{thisWeek.nightFeeds != null ? thisWeek.nightFeeds.toFixed(1) : '—'}</td><td>{before.nightFeeds != null ? before.nightFeeds.toFixed(1) : '—'}</td></tr>
             </tbody>
           </table>
-          <div className="muted small">Averages over nights with a bedtime logged: {thisWeek.nights} of the last 7{before.nights ? `, ${before.nights} of the 7 before` : ''}. Night feeds are feeds after bedtime inside the night window.</div>
         </div>
       )}
     </>
