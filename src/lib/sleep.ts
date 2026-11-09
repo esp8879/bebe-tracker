@@ -136,16 +136,17 @@ export function fmtEveningMinutes(m: number): string {
   return `${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;
 }
 
-export interface WeekSummary { nights: number; firstStretchMs: number | null; bedtimeMin: number | null; nightFeeds: number | null }
+export interface WeekSummary { nights: number; firstStretchMs: number | null; longestMs: number | null; bedtimeMin: number | null; nightFeeds: number | null }
 
 /** Averages over the given nights, counting only nights that have a logged bedtime. */
 export function weekSummary(entries: Entry[], keys: string[], now: number, window = DEFAULT_NIGHT_SLEEP): WeekSummary {
   const stats = keys.map((k) => nightStats(entries, k, now)).filter((s) => s.bedtime !== null);
-  if (!stats.length) return { nights: 0, firstStretchMs: null, bedtimeMin: null, nightFeeds: null };
+  if (!stats.length) return { nights: 0, firstStretchMs: null, longestMs: null, bedtimeMin: null, nightFeeds: null };
   const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
   return {
     nights: stats.length,
     firstStretchMs: avg(stats.map((s) => s.firstStretchMs)),
+    longestMs: avg(stats.map((s) => s.longestMs)),
     bedtimeMin: avgEveningMinutes(stats.map((s) => s.bedtime!)),
     nightFeeds: avg(stats.map((s) => nightFeeds(entries, s.key, now, window).length)),
   };

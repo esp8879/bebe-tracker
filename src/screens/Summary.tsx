@@ -31,7 +31,7 @@ function DaysView() {
         <table className="summary">
           <thead>
             <tr>
-              <th>Day</th><th>Age</th><th>Feeds</th><th>Total {volLabel()}</th><th>Formula {volLabel()}</th><th>BM {volLabel()}</th><th>Pumps</th><th>Pumped {volLabel()}</th>{sleepOn && <><th>Sleep</th><th>Naps</th><th>Night</th><th>Bedtime</th></>}{diapers && <><th>Diapers</th><th>Wet</th><th>Dirty</th><th>Stool</th></>}
+              <th>Day</th><th>Age</th><th>Feeds</th><th>Total {volLabel()}</th><th>Formula {volLabel()}</th><th>BM {volLabel()}</th><th>Pumps</th><th>Pumped {volLabel()}</th>{sleepOn && <><th>Sleep</th><th>Naps</th><th>Longest</th><th>Bedtime</th></>}{diapers && <><th>Diapers</th><th>Wet</th><th>Dirty</th><th>Stool</th></>}
             </tr>
           </thead>
           <tbody>

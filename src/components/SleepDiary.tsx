@@ -1,9 +1,9 @@
 import { useStore } from '../data/store';
 import { useNow } from '../hooks';
 import { isActive } from '../lib/summary';
-import { fmtDur, fromLocal } from '../lib/time';
+import { dayOf, fmtDur, fromLocal } from '../lib/time';
 import {
-  DEFAULT_NIGHT_SLEEP, placeSegments, currentNight, lastCompletedNight, nightsBack, nightKey, nightStats, sleepsOf, weekSummary, fmtEveningMinutes, loggedNights,
+  DEFAULT_NIGHT_SLEEP, sleepMsOnDay, placeSegments, currentNight, lastCompletedNight, nightsBack, nightKey, sleepsOf, weekSummary, fmtEveningMinutes, loggedNights,
 } from '../lib/sleep';
 import { SLEEP_HOW_LABEL } from '../types';
 
@@ -88,6 +88,7 @@ export function SleepDiary() {
             <thead><tr><th /><th>Last 7 nights</th><th>7 before</th></tr></thead>
             <tbody>
               <tr><td>First stretch</td><td>{thisWeek.firstStretchMs != null ? fmtDur(thisWeek.firstStretchMs) : '—'}</td><td>{before.firstStretchMs != null ? fmtDur(before.firstStretchMs) : '—'}</td></tr>
+              <tr><td>Longest stretch</td><td>{thisWeek.longestMs != null ? fmtDur(thisWeek.longestMs) : '—'}</td><td>{before.longestMs != null ? fmtDur(before.longestMs) : '—'}</td></tr>
               <tr><td>Bedtime</td><td>{thisWeek.bedtimeMin != null ? fmtEveningMinutes(thisWeek.bedtimeMin) : '—'}</td><td>{before.bedtimeMin != null ? fmtEveningMinutes(before.bedtimeMin) : '—'}</td></tr>
               <tr><td>Night feeds</td><td>{thisWeek.nightFeeds != null ? thisWeek.nightFeeds.toFixed(1) : '—'}</td><td>{before.nightFeeds != null ? before.nightFeeds.toFixed(1) : '—'}</td></tr>
             </tbody>
@@ -99,22 +100,21 @@ export function SleepDiary() {
   );
 }
 
-/** Today's trend card: last night's longest stretch, its 7-night average, and the average bedtime. */
+/** Today's sleep stats: total sleep yesterday, the daily average over the last 7 days, and the average bedtime. */
 export function NightsCard({ onOpen }: { onOpen: () => void }) {
   const { entries, settings } = useStore();
   const now = useNow(60_000);
   const win = settings.night_sleep ?? DEFAULT_NIGHT_SLEEP;
-  const last = lastCompletedNight(now, win);
-  const keys = nightsBack(last, 7);
-  const longest = keys.map((k) => nightStats(entries, k, now)).filter((s) => s.bedtime !== null).map((s) => s.longestMs);
-  const lastNight = nightStats(entries, last, now).longestMs;
-  const avg = longest.length ? longest.reduce((a, b) => a + b, 0) / longest.length : 0;
-  const bed = weekSummary(entries, keys, now, win).bedtimeMin;
+  const days = nightsBack(dayOf(now), 8).slice(1); // yesterday and the six days before
+  const totals = days.map((d) => sleepMsOnDay(entries, d, now));
+  const logged = totals.filter((t) => t > 0);
+  const avg = logged.length ? logged.reduce((a, b) => a + b, 0) / logged.length : 0;
+  const bed = weekSummary(entries, nightsBack(lastCompletedNight(now, win), 7), now, win).bedtimeMin;
   return (
     <div className="card compact pressable nights" onClick={onOpen}>
-      <h3>Longest stretch</h3>
-      <div className="kv"><span>Last night</span><b>{lastNight ? fmtDur(lastNight) : '—'}</b></div>
-      <div className="kv"><span>7-night avg</span><b>{avg ? fmtDur(avg) : '—'}</b></div>
+      <h3>Sleep stats</h3>
+      <div className="kv"><span>Yesterday</span><b>{totals[0] ? fmtDur(totals[0]) : '—'}</b></div>
+      <div className="kv"><span>7-day avg</span><b>{avg ? fmtDur(avg) : '—'}</b></div>
       <div className="kv"><span>Avg bedtime</span><b>{bed != null ? fmtEveningMinutes(bed) : '—'}</b></div>
     </div>
   );
