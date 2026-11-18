@@ -90,7 +90,7 @@
     <h1>bébé <span>tracker</span></h1>
     <p class="lede">A shared logbook for a newborn's feeds, diapers, pumping and mom's meds. Two phones, one live dataset, built for one-handed use at 3 am. This page follows how it changed over its first ten days.</p>
     <div class="facts">
-      <span><b>65</b> releases</span>
+      <span><b>66</b> releases</span>
       <span><b>67</b> days</span>
       <span><b>5</b> tabs</span>
       <span><b>45</b> automated tests</span>
@@ -576,6 +576,8 @@
         <h2>Settings that stay put</h2>
         <ul class="notes">
           <li class="fix"><b>Settings reset to defaults on their own.</b><span class="tag">fix</span> A phone briefly heard from the database that the household's settings didn't exist and wrote fresh defaults over them: the name, the birth time, the night feed schedule, and which things are tracked. No entries, weights or appointments were touched. Now only the phone that creates a household can ever write its first settings, and never over existing ones, and a change made before settings have loaded only touches the setting you changed.</li>
+          <li><b>Settings history.</b> Every settings change now keeps the version it replaced, so any change can be undone exactly.</li>
+          <li><b>Nightly backups.</b> A small script saves the whole household as a dated file every night; it's in the repo with setup notes for running it on a Mac.</li>
         </ul>
       </div>
     </article>

@@ -106,6 +106,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   const settingsDoc = useMemo(() => doc(db, 'households', hid, 'settings', 'main'), [hid]);
   const apptsCol = useMemo(() => collection(db, 'households', hid, 'appointments'), [hid]);
   const weightsCol = useMemo(() => collection(db, 'households', hid, 'weights'), [hid]);
+  const historyCol = useMemo(() => collection(db, 'households', hid, 'settings_history'), [hid]);
 
   // Debounce the badge: ignore sub-2s round trips; flag anything past 15s.
   useEffect(() => {
@@ -267,11 +268,14 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     // Before the real settings have loaded, settingsRef is still the defaults: merge just the change,
     // never write a whole document of defaults over the household's settings.
     if (!settingsLoadedRef.current) { void setDoc(settingsDoc, patch, { merge: true }); return; }
+    // Keep the version being replaced, so any settings change can be undone exactly (settings_history/{time}).
+    const at = Date.now();
+    void setDoc(doc(historyCol, String(at)), { saved_at: at, by: who ?? 'other', previous: settingsRef.current, changed: Object.keys(patch) });
     void setDoc(settingsDoc, next);
-  }, [settingsDoc]);
+  }, [settingsDoc, historyCol, who]);
 
   const deleteHousehold = useCallback(async () => {
-    const cols = [entriesCol, weightsCol, apptsCol];
+    const cols = [entriesCol, weightsCol, apptsCol, historyCol];
     for (const col of cols) {
       for (;;) {
         const snap = await getDocs(query(col, limit(400)));
@@ -286,7 +290,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     await last.commit();
     try { localStorage.removeItem('bebe.hid'); localStorage.removeItem('bebe.who'); } catch { /* ignore */ }
     location.href = '/';
-  }, [entriesCol, weightsCol, apptsCol, settingsDoc]);
+  }, [entriesCol, weightsCol, apptsCol, historyCol, settingsDoc]);
 
   const value = useMemo<Store>(() => ({
     hid, demo: false, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, freshness: checking ? 'checking' : cachedOnly ? 'cached' : 'fresh', syncedAt, add, update, remove, restore, saveSettings,
