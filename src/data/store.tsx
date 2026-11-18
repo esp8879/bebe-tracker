@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  collection, doc, onSnapshot, orderBy, query, limit, where, getDocs, setDoc, updateDoc, writeBatch, disableNetwork, enableNetwork, type DocumentData,
+  collection, doc, onSnapshot, orderBy, query, limit, where, getDocs, setDoc, updateDoc, writeBatch, runTransaction, disableNetwork, enableNetwork, type DocumentData,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getWho, setWhoLocal } from '../household';
+import { getWho, setWhoLocal, SEED_KEY } from '../household';
 import { DEFAULT_SETTINGS, ENTRY_TYPES, type Entry, type Settings, type Who, type Appointment, type Weight } from '../types';
 import { dayOf, setTimezone, deviceTimezone } from '../lib/time';
 import { setUnits } from '../lib/units';
@@ -191,12 +191,23 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
         setSettings(s);
         setSettingsLoaded(true);
       } else if (!snap.metadata.fromCache && !seededRef.current) {
-        // Confirmed by the server that this household is brand new: write default settings once.
+        // Default settings are written only by the device that just created this household, and only if the
+        // document truly doesn't exist. On 2026-11-17 a phone got a "doesn't exist" snapshot for a household
+        // with two months of settings and overwrote them with defaults; never again.
+        let mine = false;
+        try { mine = localStorage.getItem(SEED_KEY) === hid; } catch { /* ignore */ }
+        if (!mine) return;
         seededRef.current = true;
-        await setDoc(settingsDoc, { ...DEFAULT_SETTINGS, tz: deviceTimezone(), marked_awake: false });
+        try {
+          await runTransaction(db, async (tx) => {
+            const cur = await tx.get(settingsDoc);
+            if (!cur.exists()) tx.set(settingsDoc, { ...DEFAULT_SETTINGS, tz: deviceTimezone(), marked_awake: false });
+          });
+          try { localStorage.removeItem(SEED_KEY); } catch { /* ignore */ }
+        } catch (e) { seededRef.current = false; console.error('seed settings', e); }
       }
     }, (err) => console.error('settings listener', err));
-  }, [settingsDoc, entriesCol]);
+  }, [settingsDoc, entriesCol, hid]);
 
   const setWho = useCallback((w: Who) => { setWhoLocal(w); setWhoState(w); }, []);
 
@@ -247,10 +258,15 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
 
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+  const settingsLoadedRef = useRef(settingsLoaded);
+  settingsLoadedRef.current = settingsLoaded;
   const saveSettings = useCallback(async (patch: Partial<Settings>) => {
     // Write the full document (no merge) so removed med intervals really disappear.
     const next = { ...settingsRef.current, ...patch };
     setSettings(next);
+    // Before the real settings have loaded, settingsRef is still the defaults: merge just the change,
+    // never write a whole document of defaults over the household's settings.
+    if (!settingsLoadedRef.current) { void setDoc(settingsDoc, patch, { merge: true }); return; }
     void setDoc(settingsDoc, next);
   }, [settingsDoc]);
 

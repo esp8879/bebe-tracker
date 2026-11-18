@@ -3,6 +3,7 @@ import { DEMO_HID, DEMO_PATH } from './data/demo';
 
 const HID_KEY = 'bebe.hid';
 const WHO_KEY = 'bebe.who';
+export const SEED_KEY = 'bebe.seedSettingsFor';
 const HID_CHARS = '[A-Za-z0-9_-]{24,}';
 const PATH_RE = new RegExp(`^/h/(${HID_CHARS})`);
 const HASH_RE = new RegExp(`[#&?]h=(${HID_CHARS})`);
@@ -54,6 +55,8 @@ export function resolveHid(): string | null {
 export function createHousehold(): string {
   const hid = generateHid();
   safeSet(HID_KEY, hid);
+  // Only the device that created a household may ever write its default settings (see the store).
+  safeSet(SEED_KEY, hid);
   history.replaceState(null, '', householdPath(hid));
   return hid;
 }
