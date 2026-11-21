@@ -265,25 +265,34 @@ table.compare td:nth-child(2) { font-weight: 700; }
 .col-glance, .col-stats { display: contents; }
 @media (min-width: 960px) and (orientation: landscape) {
   .app:has(.screen.today), .app:has(.screen.summary) { max-width: 1180px; }
-  .screen.today { display: grid; grid-template-columns: 1.15fr 1fr; grid-template-rows: auto 1fr; column-gap: 18px; row-gap: 12px; align-content: start; padding-inline: 24px; }
-  .screen.today > .row { grid-column: 1 / -1; }
-  .screen.today > .row h1 { font-size: 28px; }
-  .screen.today > .row .mono { font-size: 24px; }
-  .col-glance, .col-stats { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-  .screen.today .timer { font-size: 27px; padding: 12px 8px; }
-  .screen.today .card.timers.hero .timer { font-size: 30px; padding: 16px 8px; }
-  .screen.today .timer .sub { font-size: 16px; }
-  .screen.today .timer .ico { width: 40px; }
-  .screen.today .timer .ico svg { width: 30px; height: 30px; }
-  .screen.today .timer .due { font-size: 22px; padding: 9px 14px; }
-  .screen.today .card.compact { padding: 14px 16px; gap: 10px; }
-  .screen.today .card.compact .stat { padding: 8px 12px; }
-  .screen.today .card.compact .stat .v { font-size: 26px; }
-  .screen.today .card.compact .stat .k { font-size: 13.5px; }
-  .screen.today .card.compact.sofar > .small { font-size: 15px; }
-  .screen.today .duo .card { padding: 12px 16px; gap: 6px; }
-  .screen.today .card.nights .kv { font-size: 16px; }
-  .screen.today .card.nights .kv b { font-size: 20px; }
+  /* Fill the screen: the two columns share the height between the header and the dock. */
+  .app .screen.today { display: grid; grid-template-columns: 1.1fr 1fr; grid-template-rows: auto minmax(0, 1fr); column-gap: 20px; row-gap: 14px; height: 100vh; height: 100svh; padding-inline: 24px; }
+  .app .screen.today > .row { grid-column: 1 / -1; }
+  .app .screen.today > .row h1 { font-size: 28px; }
+  .app .screen.today > .row .mono { font-size: 24px; }
+  .app .col-glance, .app .col-stats { display: flex; flex-direction: column; gap: 14px; min-width: 0; min-height: 0; }
+  /* Left: each timer card takes an equal share of the column, content centred. */
+  .app .col-glance > .card { flex: 1 1 0; justify-content: center; padding-block: 8px; min-height: 0; }
+  .app .col-glance > .card > .timer { flex: 1; }
+  .app .screen.today .timer, .app .screen.today .card.timers.hero .timer { font-size: clamp(28px, 4.6vh, 40px); padding: 8px 10px; gap: 16px; }
+  .app .screen.today .timer .sub { font-size: clamp(16px, 2.3vh, 20px); margin-top: 4px; }
+  .app .screen.today .timer .ico { width: 52px; }
+  .app .screen.today .timer .ico svg { width: 40px; height: 40px; }
+  .app .screen.today .timer .due { font-size: clamp(22px, 3.3vh, 28px); padding: 10px 16px; }
+  /* Right: Today so far takes what it needs, the stats and appointment cards share the rest. */
+  .app .screen.today .card.compact.sofar { flex: 1 1 auto; justify-content: space-evenly; padding: 16px 18px; gap: 12px; }
+  .app .screen.today .card.compact.sofar .stats { gap: 10px; }
+  .app .screen.today .card.compact .stat { padding: 10px 14px; }
+  .app .screen.today .card.compact .stat .v { font-size: clamp(24px, 3.6vh, 32px); }
+  .app .screen.today .card.compact .stat .k { font-size: 14px; }
+  .app .screen.today .card.compact.sofar > .small { font-size: 16px; }
+  .app .screen.today .duo { flex: 1 1 auto; gap: 14px; }
+  .app .screen.today .duo .card { padding: 16px 18px; gap: 8px; justify-content: space-evenly; }
+  .app .screen.today .card.nights .kv { font-size: 17px; }
+  .app .screen.today .card.nights .kv b { font-size: clamp(20px, 3vh, 26px); }
+  .app .screen.today .duo .card h3 { font-size: 14px; }
+  /* Long countdowns wrap rather than being cut off */
+  .app .col-glance .timer .grow > span:first-child { white-space: normal; overflow: visible; line-height: 1.1; }
   .dock > div { max-width: 1000px; }
   .dock button { height: 60px; font-size: 15px; }
 }
