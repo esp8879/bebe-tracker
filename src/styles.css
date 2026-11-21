@@ -274,7 +274,7 @@ table.compare td:nth-child(2) { font-weight: 700; }
   /* Left: each timer card takes an equal share of the column, content centred. */
   .app .col-glance > .card { flex: 1 1 0; justify-content: center; padding-block: 8px; min-height: 0; }
   .app .col-glance > .card > .timer { flex: 1; }
-  .app .screen.today .timer, .app .screen.today .card.timers.hero .timer { font-size: clamp(28px, 4.6vh, 40px); padding: 8px 10px; gap: 16px; }
+  .app .screen.today .timer, .app .screen.today .card.timers.hero .timer { font-size: clamp(26px, 4.2vh, 38px); padding: 6px 10px; gap: 16px; }
   .app .screen.today .timer .sub { font-size: clamp(16px, 2.3vh, 20px); margin-top: 4px; }
   .app .screen.today .timer .ico { width: 52px; }
   .app .screen.today .timer .ico svg { width: 40px; height: 40px; }
@@ -294,5 +294,10 @@ table.compare td:nth-child(2) { font-weight: 700; }
   /* Long countdowns wrap rather than being cut off */
   .app .col-glance .timer .grow > span:first-child { white-space: normal; overflow: visible; line-height: 1.1; }
   .dock > div { max-width: 1000px; }
-  .dock button { height: 60px; font-size: 15px; }
+  :root { --dock-h: 96px; }
+  .dock { padding: 0 20px 12px; }
+  .dock > div { gap: 14px; }
+  .dock button { height: 84px; font-size: 19px; gap: 4px; border-radius: 16px; }
+  .dock button .ico { height: 34px; }
+  .dock button .ico svg { width: 34px; height: 34px; }
 }
