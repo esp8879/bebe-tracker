@@ -3,7 +3,8 @@ import { useStore } from '../data/store';
 import { useUI } from '../ui';
 import { useNav } from '../App';
 import { useNow } from '../hooks';
-import { dayOf, parseNYLocal, ageAt, ageDaysOnDay, fmtTime, fmtDur, fmtWhen, fmtShortDay } from '../lib/time';
+import { dayOf, parseNYLocal, ageAt, ageDaysOnDay, fmtTime, fmtDur, fmtWhen, fmtShortDay, fmtLongDate } from '../lib/time';
+import { useDevice, useIdleClock, useMedia, TABLET_LANDSCAPE } from '../device';
 import { nextFeedDue, medTimer, rotationNext, pumpTimer, recentDoses, ROTATION_MEDS } from '../lib/timers';
 import { summaryForDay } from '../lib/summary';
 import { MEDS, STOOL_COLORS, medLabel, allMeds, type Med } from '../types';
@@ -95,6 +96,11 @@ export function Today() {
     : feed.status === 'due' ? `Feed due · ${fmtDur(-feed.remainingMs)} ago`
     : `Feed overdue · ${fmtDur(-feed.remainingMs)}`;
   const feedClass = !feed || feed.status === 'ok' ? '' : feed.status === 'due' ? 'amber' : 'red';
+
+  // Clock mode (big screens held sideways, per device): after a few idle minutes the clock takes over.
+  const dev = useDevice();
+  const tablet = useMedia(TABLET_LANDSCAPE);
+  const [clock, wake] = useIdleClock(tablet ? dev.clockAfterMin : 0);
 
   return (
     <div className={`screen today${roomy ? ' roomy' : ''}${snug ? ' snug' : ''}${freshness === 'checking' ? ' checking' : ''}`} aria-busy={freshness === 'checking'}>
@@ -280,6 +286,41 @@ export function Today() {
         </div>
       </div>
       </div>
+      {clock && (() => {
+        const [hm, ap] = fmtTime(now).split(' ');
+        const glance: { k: 'feed' | 'sleep' | 'pump' | 'mom_med'; head: string; cls?: string; sub: string }[] = [
+          { k: 'feed', head: feedLine, cls: feedClass, sub: feed ? `Last feed ${fmtTime(feed.lastAt)}${nightOn ? ` · ${feed.night ? 'night' : 'day'}, ${fmtDur(feed.intervalMin * 60_000)}` : ''}` : '' },
+        ];
+        if (sleepOn) glance.push(asleep ? { k: 'sleep', head: `Asleep ${fmtDur(now - asleep.at)}`, sub: `since ${fmtTime(asleep.at)}` }
+          : woke ? { k: 'sleep', head: `Awake ${fmtDur(now - woke)}`, sub: `woke ${fmtTime(woke)}` } : { k: 'sleep', head: 'No sleep logged yet', cls: 'muted', sub: '' });
+        glance.push(!pump ? { k: 'pump', head: 'No pumps logged yet', cls: 'muted', sub: '' }
+          : pump.okAt === null ? { k: 'pump', head: `Pumped ${ago(now - pump.lastAt)} ago`, sub: `${fmtTime(pump.lastAt)}${s.pumped_ml ? ` · ${fmtMl(s.pumped_ml, false)} today` : ''}` }
+          : { k: 'pump', head: pump.ok ? 'Pump OK now' : `Pump in ${fmtDur(pump.remainingMs)}`, cls: pump.ok ? 'green' : '', sub: `Last pump ${fmtTime(pump.lastAt)}` });
+        if (medsOn) {
+          const d = lastMode ? [...recent].sort((a, b) => b.lastAt - a.lastAt)[0] : null;
+          const m = !lastMode ? [...(rot ? [{ med: rot.med, ok: rot.ok, okAt: rot.okAt, rem: rot.remainingMs }] : []), ...meds.map((x) => ({ med: x.med, ok: x.ok, okAt: x.okAt, rem: x.remainingMs }))]
+            .sort((a, b) => (a.ok ? -1 : a.okAt ?? 0) - (b.ok ? -1 : b.okAt ?? 0))[0] : null;
+          if (d) glance.push({ k: 'mom_med', head: `${medLabel(d.med)} ${ago(now - d.lastAt)} ago`, sub: fmtTime(d.lastAt) });
+          else if (m) glance.push({ k: 'mom_med', head: m.ok ? `${medLabel(m.med)} OK now` : `${medLabel(m.med)} in ${fmtDur(m.rem)}`, cls: m.ok ? 'green' : '', sub: m.ok || !m.okAt ? '' : fmtTime(m.okAt) });
+        }
+        return (
+          <div className="clock-mode" onClick={(e) => { e.stopPropagation(); e.preventDefault(); wake(); }} role="button" aria-label="Show Today">
+            <div className="clock-left">
+              <div className="clock-time">{hm}<small>{ap}</small></div>
+              <div className="clock-date">{fmtLongDate(now)}</div>
+            </div>
+            <div className="clock-glance">
+              {glance.map((g) => (
+                <div key={g.k} className="clock-item">
+                  <span className={`ico t-${g.k}`}><Icon name={g.k} /></span>
+                  <div><b className={g.cls}>{g.head}</b>{g.sub && <i>{g.sub}</i>}</div>
+                </div>
+              ))}
+            </div>
+            <div className="clock-name">{settings.baby_name}</div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

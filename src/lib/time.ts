@@ -6,7 +6,7 @@ export function setTimezone(tz: string) {
   try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); TZ = tz; } catch { /* invalid tz: keep current */ }
 }
 
-interface Fmts { parts: Intl.DateTimeFormat; time: Intl.DateTimeFormat; day: Intl.DateTimeFormat; shortDay: Intl.DateTimeFormat; dateTime: Intl.DateTimeFormat; weekdayTime: Intl.DateTimeFormat; monthDayTime: Intl.DateTimeFormat }
+interface Fmts { parts: Intl.DateTimeFormat; time: Intl.DateTimeFormat; day: Intl.DateTimeFormat; shortDay: Intl.DateTimeFormat; dateTime: Intl.DateTimeFormat; weekdayTime: Intl.DateTimeFormat; monthDayTime: Intl.DateTimeFormat; longDate: Intl.DateTimeFormat }
 const cache = new Map<string, Fmts>();
 function F(): Fmts {
   let f = cache.get(TZ);
@@ -19,6 +19,7 @@ function F(): Fmts {
       dateTime: new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
       weekdayTime: new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', hour: 'numeric', minute: '2-digit' }),
       monthDayTime: new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+      longDate: new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'long', month: 'long', day: 'numeric' }),
     };
     cache.set(TZ, f);
   }
@@ -111,3 +112,6 @@ export function fmtWhen(ms: number, now: number): string {
   if (diffDays > 1 && diffDays <= 6) return `${part(F().weekdayTime, 'weekday')} ${fmtTime(ms)}`;
   return `${part(F().monthDayTime, 'month')} ${part(F().monthDayTime, 'day')}, ${fmtTime(ms)}`;
 }
+
+/** "Saturday, November 21" in the household time zone (clock mode). */
+export const fmtLongDate = (ms: number) => F().longDate.format(new Date(ms));

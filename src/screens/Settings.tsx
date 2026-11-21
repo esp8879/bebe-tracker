@@ -9,7 +9,7 @@ import { entriesToCsv, backupJson, deliverFile } from '../lib/export';
 import { FEEDBACK_EMAIL, GUIDE_URL, NOTES_URL } from '../config';
 import { DocViewer } from '../components/DocViewer';
 import { DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
-import { useDevice, saveDevice, wakeLockSupported } from '../device';
+import { useDevice, saveDevice, wakeLockSupported, bigScreen } from '../device';
 
 function TextSetting({ label, value, onSave, type = 'text', inputMode }: { label: string; value: string; onSave: (v: string) => void; type?: string; inputMode?: 'numeric' | 'decimal' | 'text' }) {
   const [v, setV] = useState(value);
@@ -138,6 +138,11 @@ export function Settings() {
             <TextSetting key={`ds-${dev.dim.start}`} label="From" type="time" value={dev.dim.start} onSave={(v) => v && saveDevice({ dim: { ...dev.dim, start: v } })} />
             <TextSetting key={`de-${dev.dim.end}`} label="Until" type="time" value={dev.dim.end} onSave={(v) => v && saveDevice({ dim: { ...dev.dim, end: v } })} />
           </div>
+        )}
+        {bigScreen() && (
+          <Field label="Clock when idle">
+            <Seg<string> options={[{ value: '0', label: 'Off' }, { value: '1', label: '1 min' }, { value: '3', label: '3 min' }, { value: '10', label: '10 min' }]} value={String(dev.clockAfterMin)} onChange={(v) => saveDevice({ clockAfterMin: Number(v) })} />
+          </Field>
         )}
         <div className="muted small">Screen settings apply to this device only.</div>
         <div className="muted small">Sync: {!online ? 'offline — entries are saved here and sent when back online' : stuck ? 'still sending — weak signal? Entries are safe on this phone and will go through.' : pending ? 'sending…' : 'up to date'}</div>
