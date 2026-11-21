@@ -90,7 +90,7 @@
     <h1>bébé <span>tracker</span></h1>
     <p class="lede">A shared logbook for a newborn's feeds, diapers, pumping and mom's meds. Two phones, one live dataset, built for one-handed use at 3 am. This page follows how it changed over its first ten days.</p>
     <div class="facts">
-      <span><b>69</b> releases</span>
+      <span><b>70</b> releases</span>
       <span><b>71</b> days</span>
       <span><b>5</b> tabs</span>
       <span><b>45</b> automated tests</span>
@@ -631,6 +631,16 @@
         <div class="shots">
           <figure class="phone"><div class="screen" style="aspect-ratio: 1024 / 748"><img src="shots/ipad-clock.png" alt="Clock mode on an iPad: a large clock and date on the left, feed, sleep, pump and med status on the right." loading="lazy"></div><figcaption><b>Clock mode</b>Readable from across the room.</figcaption></figure>
         </div>
+      </div>
+    </article>
+    <article class="release">
+      <div class="stamp"><div class="ver">1.31</div><div class="when">Sat Nov 21</div></div>
+      <div class="body">
+        <h2>Screens that stay in sync</h2>
+        <ul class="notes">
+          <li><b>An always-on iPad catches up by itself.</b> A screen that never leaves the app could lose its live connection without noticing, so a feed logged on a phone didn't show until the app was reopened. Every 90 seconds it now asks the server directly for the latest change and reconnects if it's missing anything, so it catches up within about a minute and a half.</li>
+          <li><b>Clock mode fits ten o'clock.</b> With a two-digit hour, the clock ran into the status column. It now sizes itself to the screen's width as well as its height.</li>
+        </ul>
       </div>
     </article>
   </section>

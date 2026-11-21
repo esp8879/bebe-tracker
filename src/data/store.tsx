@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import {
   collection, doc, onSnapshot, orderBy, query, limit, where, getDocs, setDoc, updateDoc, writeBatch, runTransaction, disableNetwork, enableNetwork, type DocumentData,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, PROJECT_ID } from '../firebase';
 import { getWho, setWhoLocal, SEED_KEY } from '../household';
 import { DEFAULT_SETTINGS, ENTRY_TYPES, type Entry, type Settings, type Who, type Appointment, type Weight } from '../types';
 import { dayOf, setTimezone, deviceTimezone } from '../lib/time';
@@ -134,7 +134,8 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   }, []);
 
   useEffect(() => {
-    const on = () => setOnline(true), off = () => setOnline(false);
+    // Back online: reconnect the stream right away rather than waiting for Firestore's own retry.
+    const on = () => { setOnline(true); void disableNetwork(db).then(() => enableNetwork(db)).catch(() => {}); }, off = () => setOnline(false);
     window.addEventListener('online', on); window.addEventListener('offline', off);
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
@@ -149,6 +150,46 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
       if (!snap.metadata.fromCache) { const t = Date.now(); setChecking(false); setCachedOnly(false); setSyncedAt(t); lsSet('bebe.syncedAt', t); }
     }, (err) => console.error('entries listener', err));
   }, [entriesCol, windowStart]);
+
+  // Watchdog for screens that never leave the app (an iPad on the nightstand): the visibility bounce above never
+  // runs there, and a live stream can die silently (Wi-Fi blip, router timeout). Every 90 s, ask the server for the
+  // most recently changed entry; if this screen hasn't got that change yet, reconnect. One small read per check.
+  const recentRef = useRef(recentEntries);
+  recentRef.current = recentEntries;
+  useEffect(() => {
+    let busy = false;
+    const check = async () => {
+      if (busy || document.visibilityState !== 'visible' || !navigator.onLine) return;
+      busy = true;
+      try {
+        // Asked over plain HTTPS, not through the SDK: the SDK's own server reads ride the same stream we're checking.
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 15_000);
+        const res = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/households/${hid}:runQuery`, {
+          method: 'POST', signal: ctl.signal, headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'entries' }], orderBy: [{ field: { fieldPath: 'updated_at' }, direction: 'DESCENDING' }], limit: 1 } }),
+        }).finally(() => clearTimeout(timer));
+        if (!res.ok) return;
+        const doc0 = ((await res.json()) as { document?: { name: string; fields?: Record<string, { integerValue?: string; doubleValue?: number }> } }[])[0]?.document;
+        if (!doc0) return;
+        const num = (k: string) => Number(doc0.fields?.[k]?.integerValue ?? doc0.fields?.[k]?.doubleValue ?? 0);
+        const d = { id: doc0.name.split('/').pop()! };
+        const server = { at: num('at'), updated_at: num('updated_at') };
+        if (server.at < windowStart) return; // an edit to an entry outside the live window
+        const mine = recentRef.current.find((e) => e.id === d.id);
+        if (mine && (mine.updated_at ?? 0) >= (server.updated_at ?? 0)) return;
+        // Give a change that just landed a moment to arrive the normal way before reconnecting.
+        await new Promise((r) => setTimeout(r, 5_000));
+        const again = recentRef.current.find((e) => e.id === d.id);
+        if (again && (again.updated_at ?? 0) >= (server.updated_at ?? 0)) return;
+        console.warn('entries stream looked stale; reconnecting');
+        await disableNetwork(db); await enableNetwork(db);
+      } catch { /* offline or blocked: try again next round */ } finally { busy = false; }
+    };
+    const id = window.setInterval(check, 90_000);
+    return () => window.clearInterval(id);
+  }, [hid, windowStart]);
+
   const olderInFlight = useRef<Promise<Entry[]> | null>(null);
   const loadOlder = useCallback(async () => {
     if (olderLoaded) return olderEntries;

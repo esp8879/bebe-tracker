@@ -326,7 +326,7 @@ table.compare td:nth-child(2) { font-weight: 700; }
 
 /* Clock mode: big screens held sideways, after a few idle minutes (per device). One tap anywhere returns to Today. */
 .clock-mode { position: fixed; inset: 0; z-index: 150; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 8px; align-items: center; padding: 0 44px; background: var(--sky-paint); cursor: pointer; animation: fade .6s ease; -webkit-user-select: none; user-select: none; }
-.clock-time { font-size: clamp(110px, 22vh, 184px); font-weight: 200; letter-spacing: -.04em; line-height: .9; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.clock-time { font-size: clamp(96px, min(22vh, 14vw), 184px); font-weight: 200; letter-spacing: -.04em; line-height: .9; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .clock-time small { font-size: .23em; font-weight: 300; letter-spacing: 0; color: var(--muted); margin-left: 10px; }
 .clock-date { font-size: 26px; color: var(--muted); font-weight: 500; margin-top: 14px; }
 .clock-glance { display: flex; flex-direction: column; gap: 20px; padding-left: 32px; border-left: 1px solid rgb(255 255 255 / .08); min-width: 0; }
