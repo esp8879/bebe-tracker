@@ -45,13 +45,25 @@ function useWakeLock(on: boolean) {
   }, [on]);
 }
 
-/** Mounted once at the app root: keeps the screen awake and lays the night dimmer over everything when it's time. */
+/** The sky behind the app follows this device's clock. */
+export function skyAt(ms: number): 'dawn' | 'day' | 'golden' | 'dusk' | 'night' {
+  const h = new Date(ms).getHours();
+  return h >= 5 && h < 8 ? 'dawn' : h >= 8 && h < 16 ? 'day' : h >= 16 && h < 19 ? 'golden' : h >= 19 && h < 21 ? 'dusk' : 'night';
+}
+
+/** Mounted once at the app root: keeps the screen awake, sets the sky for the time of day, and lays the night dimmer over everything when it's time. */
 export function DeviceEffects() {
   const d = useDevice();
   const now = useNow(30_000);
   useWakeLock(d.keepAwake);
   const dimNow = d.dim.enabled && isNightAt(now, d.dim);
   useEffect(() => { document.documentElement.classList.toggle('dimmed', dimNow); }, [dimNow]);
-  if (!dimNow) return null;
-  return <div className={`night-dim ${d.dim.level}`} aria-hidden="true" />;
+  const sky = skyAt(now);
+  useEffect(() => { document.documentElement.dataset.sky = sky; }, [sky]);
+  return (
+    <>
+      <div className="sky" aria-hidden="true" />
+      {dimNow && <div className={`night-dim ${d.dim.level}`} aria-hidden="true" />}
+    </>
+  );
 }
