@@ -111,7 +111,7 @@ export function Summary() {
   const sleepOn = settings.sleep_enabled !== false;
   const view = mode === 'sleep' && !sleepOn ? 'days' : mode;
   return (
-    <div className="screen">
+    <div className="screen summary">
       <h1>Summary</h1>
       <Seg<SummaryMode> options={[{ value: 'days', label: 'By day' }, { value: 'entries', label: 'All entries' }, ...(sleepOn ? [{ value: 'sleep' as const, label: 'Sleep' }] : [])]} value={view} onChange={setMode} />
       {view === 'days' ? <DaysView /> : view === 'entries' ? <EntriesView /> : <SleepDiary />}

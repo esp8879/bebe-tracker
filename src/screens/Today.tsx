@@ -111,6 +111,7 @@ export function Today() {
         </div>
       </div>
 
+      <div className="col-glance">
       <div className="card timers hero">
         <button className="timer" onClick={() => openEditor('feed')}>
           <span className="ico t-feed"><Icon name="feed" /></span>
@@ -224,8 +225,10 @@ export function Today() {
         )}
       </div>
       )}
+      </div>
 
-      <div className="card compact">
+      <div className="col-stats">
+      <div className="card compact sofar">
         <h3>Today so far</h3>
         <div className="stats">
           <div className="stat"><span className="v">{s.bottles}</span><span className="k">bottle feeds</span></div>
@@ -275,6 +278,7 @@ export function Today() {
             <div className="muted small">None scheduled ›</div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

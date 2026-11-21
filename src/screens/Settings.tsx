@@ -9,6 +9,7 @@ import { entriesToCsv, backupJson, deliverFile } from '../lib/export';
 import { FEEDBACK_EMAIL, GUIDE_URL, NOTES_URL } from '../config';
 import { DocViewer } from '../components/DocViewer';
 import { DEFAULT_NIGHT_SLEEP } from '../lib/sleep';
+import { useDevice, saveDevice, wakeLockSupported } from '../device';
 
 function TextSetting({ label, value, onSave, type = 'text', inputMode }: { label: string; value: string; onSave: (v: string) => void; type?: string; inputMode?: 'numeric' | 'decimal' | 'text' }) {
   const [v, setV] = useState(value);
@@ -51,6 +52,7 @@ export function Settings() {
   const [newMed, setNewMed] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [doc, setDoc] = useState<{ title: string; src: string } | null>(null);
+  const dev = useDevice();
   const url = shareUrl(hid);
   const tz = settings.tz ?? getTimezone();
   const night = settings.night_feeds ?? { enabled: false, start: '21:00', end: '06:00' };
@@ -120,10 +122,24 @@ export function Settings() {
       )}
 
       <div className="card">
-        <h3>This phone</h3>
-        <Field label="Who is logging from this phone?">
+        <h3>This device</h3>
+        <Field label="Who is logging from this device?">
           <Seg<Who> options={[{ value: 'dad', label: settings.users.dad }, { value: 'mom', label: settings.users.mom }, { value: 'other', label: settings.users.other || 'Other' }]} value={who ?? 'dad'} onChange={setWho} />
         </Field>
+        <Field label="Keep screen awake">
+          <Seg<'on' | 'off'> options={[{ value: 'off', label: 'Off' }, { value: 'on', label: 'On' }]} value={dev.keepAwake ? 'on' : 'off'} onChange={(v) => saveDevice({ keepAwake: v === 'on' })} />
+        </Field>
+        {dev.keepAwake && !wakeLockSupported() && <div className="amber small">This browser can't keep the screen awake. Set Auto-Lock to Never in the device's settings instead.</div>}
+        <Field label="Dim at night">
+          <Seg<'off' | 'dim' | 'dimmer'> options={[{ value: 'off', label: 'Off' }, { value: 'dim', label: 'Dim' }, { value: 'dimmer', label: 'Dimmer' }]} value={dev.dim.enabled ? dev.dim.level : 'off'} onChange={(v) => saveDevice({ dim: { ...dev.dim, enabled: v !== 'off', level: v === 'off' ? dev.dim.level : v } })} />
+        </Field>
+        {dev.dim.enabled && (
+          <div className="night-times">
+            <TextSetting key={`ds-${dev.dim.start}`} label="From" type="time" value={dev.dim.start} onSave={(v) => v && saveDevice({ dim: { ...dev.dim, start: v } })} />
+            <TextSetting key={`de-${dev.dim.end}`} label="Until" type="time" value={dev.dim.end} onSave={(v) => v && saveDevice({ dim: { ...dev.dim, end: v } })} />
+          </div>
+        )}
+        <div className="muted small">Screen settings apply to this device only.</div>
         <div className="muted small">Sync: {!online ? 'offline — entries are saved here and sent when back online' : stuck ? 'still sending — weak signal? Entries are safe on this phone and will go through.' : pending ? 'sending…' : 'up to date'}</div>
       </div>
 

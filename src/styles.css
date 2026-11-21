@@ -236,16 +236,16 @@ table.compare td:nth-child(2) { font-weight: 700; }
 
 /* Today while checking for fresh data (opened after 20+ min away): values become uniform shimmering bars,
    labels and layout stay put, then the real numbers fade in. */
-.screen.today .timer .grow > span, .screen.today .timer .due, .screen.today .stat .v, .screen.today > .card.compact > .small, .screen.today .duo .card > div { transition: color .3s ease; }
+.screen.today .timer .grow > span, .screen.today .timer .due, .screen.today .stat .v, .screen.today .card.compact.sofar > .small, .screen.today .duo .card > div { transition: color .3s ease; }
 .screen.today.checking .timer .grow > span, .screen.today.checking .timer .due, .screen.today.checking .stat .v,
-.screen.today.checking > .card.compact > .small, .screen.today.checking .duo .card > div {
+.screen.today.checking .card.compact.sofar > .small, .screen.today.checking .duo .card > div {
   color: transparent !important; border-radius: 6px; background: linear-gradient(90deg, var(--card2) 25%, #353950 50%, var(--card2) 75%) 0 0 / 300% 100%;
   -webkit-box-decoration-break: clone; box-decoration-break: clone; animation: shimmer 1.4s ease-in-out infinite;
 }
 .screen.today.checking .timer .due { border-color: transparent; }
 /* Uniform bars: every line is full width whatever its text, slimmed so lines don't touch, without changing the layout. */
 .screen.today.checking .timer .grow > span { align-self: stretch; width: 100%; transform: scaleY(.72); }
-.screen.today.checking > .card.compact > .small { width: 100%; transform: scaleY(.72); }
+.screen.today.checking .card.compact.sofar > .small { width: 100%; transform: scaleY(.72); }
 .screen.today.checking .stat .v { width: 100%; }
 .screen.today.checking .timer .due { min-width: 96px; white-space: nowrap; flex-shrink: 0; }
 .screen.today.checking .duo .card > div { width: 100%; transform: scaleY(.76); }
@@ -256,3 +256,34 @@ table.compare td:nth-child(2) { font-weight: 700; }
 /* Nights trend card on Today */
 .card.nights .kv { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 14px; color: var(--muted); white-space: nowrap; }
 .card.nights .kv b { color: var(--text); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Night dimming (per device, on a schedule): a layer over everything that dims and warms the screen. Taps pass through. */
+.night-dim { position: fixed; inset: 0; z-index: 200; pointer-events: none; background: rgba(12, 6, 0, .45); }
+.night-dim.dimmer { background: rgba(12, 6, 0, .65); }
+
+/* Tablets in landscape (iPad mini and up): two columns, bigger type for reading across the room. */
+.col-glance, .col-stats { display: contents; }
+@media (min-width: 960px) and (orientation: landscape) {
+  .app:has(.screen.today), .app:has(.screen.summary) { max-width: 1180px; }
+  .screen.today { display: grid; grid-template-columns: 1.15fr 1fr; grid-template-rows: auto 1fr; column-gap: 18px; row-gap: 12px; align-content: start; padding-inline: 24px; }
+  .screen.today > .row { grid-column: 1 / -1; }
+  .screen.today > .row h1 { font-size: 28px; }
+  .screen.today > .row .mono { font-size: 24px; }
+  .col-glance, .col-stats { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .screen.today .timer { font-size: 27px; padding: 12px 8px; }
+  .screen.today .card.timers.hero .timer { font-size: 30px; padding: 16px 8px; }
+  .screen.today .timer .sub { font-size: 16px; }
+  .screen.today .timer .ico { width: 40px; }
+  .screen.today .timer .ico svg { width: 30px; height: 30px; }
+  .screen.today .timer .due { font-size: 22px; padding: 9px 14px; }
+  .screen.today .card.compact { padding: 14px 16px; gap: 10px; }
+  .screen.today .card.compact .stat { padding: 8px 12px; }
+  .screen.today .card.compact .stat .v { font-size: 26px; }
+  .screen.today .card.compact .stat .k { font-size: 13.5px; }
+  .screen.today .card.compact.sofar > .small { font-size: 15px; }
+  .screen.today .duo .card { padding: 12px 16px; gap: 6px; }
+  .screen.today .card.nights .kv { font-size: 16px; }
+  .screen.today .card.nights .kv b { font-size: 20px; }
+  .dock > div { max-width: 1000px; }
+  .dock button { height: 60px; font-size: 15px; }
+}

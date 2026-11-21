@@ -5,6 +5,7 @@ import { DemoStoreProvider } from './data/demoStore';
 import { DEMO_HID, DEMO_PATH } from './data/demo';
 import { openSleep } from './lib/sleep';
 import { MarkedAwake } from './components/MarkedAwake';
+import { DeviceEffects } from './device';
 import { resolveHid, createHousehold, joinHousehold } from './household';
 import { UIProvider, useUI } from './ui';
 import { Editor } from './components/editors';
@@ -98,6 +99,7 @@ function Shell() {
       </div></nav>
       <UpdateBar />
       <MarkedAwake />
+      <DeviceEffects />
       {editor && <Editor state={editor} />}
       {apptEditor && <ApptEditor appt={apptEditor.appt} />}
       {weightEditor && <WeightEditor weight={weightEditor.weight} />}
