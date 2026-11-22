@@ -26,3 +26,15 @@ export const applyUpdate = registerSW({
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void reg.update(); });
   },
 });
+
+// Nightly fresh start for screens that never close (an iPad on the nightstand): a page left open for days can slowly
+// get sluggish or flaky. Between 3 and 5 AM on this device's clock, once the page has been open 6+ hours and nobody has
+// touched it for 10 minutes, reload (into a waiting build if there is one). Never while someone is mid-entry.
+const loadedAt = Date.now();
+setInterval(() => {
+  const h = new Date().getHours();
+  if (h < 3 || h >= 5 || document.visibilityState !== 'visible') return;
+  if (Date.now() - loadedAt < 6 * 3_600_000 || Date.now() - lastTouch < 10 * 60_000) return;
+  if (document.querySelector('.sheet, .overlay, .docviewer') && !document.querySelector('.clock-mode')) return;
+  if (updateReady) void applyUpdate(true); else window.location.reload();
+}, 5 * 60_000);

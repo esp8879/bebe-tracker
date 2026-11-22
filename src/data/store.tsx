@@ -33,6 +33,10 @@ export interface Store {
   freshness: 'fresh' | 'checking' | 'cached';
   /** When the server last confirmed the entries (persisted per device). */
   syncedAt: number | null;
+  /** Last time the server confirmed this screen has the newest change (a live snapshot or a watchdog check). */
+  confirmedAt: number | null;
+  /** The watchdog found the server ahead of this screen and is catching up. */
+  behind: boolean;
   add: (e: NewEntry) => Promise<string>;
   update: (id: string, patch: Partial<Entry>) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -89,6 +93,8 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   const [checking, setChecking] = useState(() => Date.now() - lsNum('bebe.lastSeen') > STALE_AFTER);
   const [cachedOnly, setCachedOnly] = useState(false);
   const [syncedAt, setSyncedAt] = useState<number | null>(() => lsNum('bebe.syncedAt') || null);
+  const [confirmedAt, setConfirmedAt] = useState<number | null>(null);
+  const [behindNow, setBehindNow] = useState(false);
   useEffect(() => {
     if (!checking) return;
     const t = window.setTimeout(() => { setChecking(false); setCachedOnly(true); }, 4000);
@@ -151,7 +157,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     return onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
       setRecentEntries(snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as Entry).filter((e) => ENTRY_TYPES.includes(e.type)));
       setPendingRaw(snap.metadata.hasPendingWrites);
-      if (!snap.metadata.fromCache) { const t = Date.now(); setChecking(false); setCachedOnly(false); setSyncedAt(t); lsSet('bebe.syncedAt', t); }
+      if (!snap.metadata.fromCache) { const t = Date.now(); setChecking(false); setCachedOnly(false); setSyncedAt(t); setConfirmedAt(t); lsSet('bebe.syncedAt', t); }
     }, (err) => { console.error('entries listener', err); relisten(); });
   }, [entriesCol, windowStart, listenGen, relisten]);
 
@@ -185,9 +191,10 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
         const doc0 = ((await res.json()) as { document?: { name: string; fields?: Record<string, { integerValue?: string; doubleValue?: number }> } }[])[0]?.document;
         const num = (k: string) => Number(doc0?.fields?.[k]?.integerValue ?? doc0?.fields?.[k]?.doubleValue ?? 0);
         // An edit to an entry outside the live window doesn't count.
-        if (!doc0 || num('at') < windowStart || !behind(doc0.name.split('/').pop()!, num('updated_at'))) { behindSince = 0; return; }
+        if (!doc0 || num('at') < windowStart || !behind(doc0.name.split('/').pop()!, num('updated_at'))) { behindSince = 0; setBehindNow(false); setConfirmedAt(Date.now()); return; }
         if (!behindSince) {
           behindSince = Date.now();
+          setBehindNow(true);
           console.warn('entries stream looked stale; reconnecting');
           lsSet('bebe.watchdogFixedAt', Date.now());
           void disableNetwork(db).then(() => enableNetwork(db)).catch(() => {});
@@ -350,10 +357,10 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   }, [entriesCol, weightsCol, apptsCol, historyCol, settingsDoc]);
 
   const value = useMemo<Store>(() => ({
-    hid, demo: false, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, freshness: checking ? 'checking' : cachedOnly ? 'cached' : 'fresh', syncedAt, add, update, remove, restore, saveSettings,
+    hid, demo: false, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, freshness: checking ? 'checking' : cachedOnly ? 'cached' : 'fresh', syncedAt, confirmedAt, behind: behindNow, add, update, remove, restore, saveSettings,
     appointments, addAppt, updateAppt, removeAppt, restoreAppt,
     weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold,
-  }), [hid, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, checking, cachedOnly, syncedAt, add, update, remove, restore, saveSettings, appointments, addAppt, updateAppt, removeAppt, restoreAppt, weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold]);
+  }), [hid, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, checking, cachedOnly, syncedAt, confirmedAt, behindNow, add, update, remove, restore, saveSettings, appointments, addAppt, updateAppt, removeAppt, restoreAppt, weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

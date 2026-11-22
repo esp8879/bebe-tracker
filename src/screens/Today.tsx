@@ -46,7 +46,7 @@ function FitLine({ children, max, min, style }: { children: string; max: number;
 }
 
 export function Today() {
-  const { entries, settings, pending, stuck, online, appointments, weights, demo, freshness, syncedAt } = useStore();
+  const { entries, settings, pending, stuck, online, appointments, weights, demo, freshness, syncedAt, confirmedAt, behind } = useStore();
   const { openEditor, openWeightEditor } = useUI();
   const { setTab, setSummaryMode } = useNav();
   const now = useNow(15_000);
@@ -318,6 +318,15 @@ export function Today() {
               ))}
             </div>
             <div className="clock-name">{settings.baby_name}</div>
+            {(() => {
+              // How sure this screen is that it shows the latest: refreshed every minute by the watchdog.
+              const last = confirmedAt ?? syncedAt;
+              const at = last ? ` · last updated ${fmtTime(last)}` : '';
+              const [cls, text] = !online ? ['warn', `Offline${at}`]
+                : behind || !confirmedAt || now - confirmedAt > 3 * 60_000 ? ['warn', `Catching up${at}`]
+                : ['', `Up to date · ${fmtTime(confirmedAt)}`];
+              return <div className={`clock-sync ${cls}`}>{text}</div>;
+            })()}
           </div>
         );
       })()}
