@@ -325,21 +325,51 @@ table.compare td:nth-child(2) { font-weight: 700; }
 .sky { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--sky-paint); }
 
 /* Clock mode: big screens held sideways, after a few idle minutes (per device). One tap anywhere returns to Today. */
-.clock-mode { position: fixed; inset: 0; z-index: 150; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 8px; align-items: center; padding: 0 44px; background: var(--sky-paint); cursor: pointer; animation: fade .6s ease; -webkit-user-select: none; user-select: none; }
+/* Clock mode is paper by day and ember (amber on near-black) during this screen's Dim hours. The palette lives in
+   registered custom properties so the switch fades over a minute instead of flipping; --text/--muted/--red/… are
+   re-pointed inside so shared classes (.red, .green, .amber, .clock-sync.warn) pick it up. */
+@property --ck-bg { syntax: '<color>'; inherits: true; initial-value: #efe9dc; }
+@property --ck-glow { syntax: '<color>'; inherits: true; initial-value: #fbf8f1; }
+@property --ck-text { syntax: '<color>'; inherits: true; initial-value: #2a2620; }
+@property --ck-muted { syntax: '<color>'; inherits: true; initial-value: #776f62; }
+@property --ck-faint { syntax: '<color>'; inherits: true; initial-value: #8d8475; }
+@property --ck-line { syntax: '<color>'; inherits: true; initial-value: rgba(60,45,20,.13); }
+@property --ck-red { syntax: '<color>'; inherits: true; initial-value: #b3402c; }
+@property --ck-green { syntax: '<color>'; inherits: true; initial-value: #2c7a4b; }
+@property --ck-amber { syntax: '<color>'; inherits: true; initial-value: #a96a12; }
+@property --ck-feed { syntax: '<color>'; inherits: true; initial-value: #4a62c4; }
+@property --ck-sleep { syntax: '<color>'; inherits: true; initial-value: #9c7a22; }
+@property --ck-pump { syntax: '<color>'; inherits: true; initial-value: #8450b3; }
+@property --ck-med { syntax: '<color>'; inherits: true; initial-value: #b06f16; }
+@property --ck-appt { syntax: '<color>'; inherits: true; initial-value: #b8577a; }
+.clock-mode { position: fixed; inset: 0; z-index: 150; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 8px; align-items: center; padding: 0 44px; cursor: pointer; animation: fade .6s ease; -webkit-user-select: none; user-select: none;
+  background: radial-gradient(ellipse 120% 90% at 50% -10%, var(--ck-glow), transparent 70%), var(--ck-bg); color: var(--ck-text);
+  --text: var(--ck-text); --muted: var(--ck-muted); --red: var(--ck-red); --green: var(--ck-green); --amber: var(--ck-amber);
+  transition: --ck-bg 60s, --ck-glow 60s, --ck-text 60s, --ck-muted 60s, --ck-faint 60s, --ck-line 60s, --ck-red 60s, --ck-green 60s, --ck-amber 60s, --ck-feed 60s, --ck-sleep 60s, --ck-pump 60s, --ck-med 60s, --ck-appt 60s; }
+.clock-mode.paper { --ck-bg: #efe9dc; --ck-glow: #fbf8f1; --ck-text: #2a2620; --ck-muted: #776f62; --ck-faint: #8d8475; --ck-line: rgba(60,45,20,.13); --ck-red: #b3402c; --ck-green: #2c7a4b; --ck-amber: #a96a12;
+  --ck-feed: #4a62c4; --ck-sleep: #9c7a22; --ck-pump: #8450b3; --ck-med: #b06f16; --ck-appt: #b8577a; }
+.clock-mode.ember { --ck-bg: #0a0705; --ck-glow: #0a0705; --ck-text: #e3a55e; --ck-muted: #93704a; --ck-faint: #7d5f3e; --ck-line: rgba(227,165,94,.12); --ck-red: #e0745a; --ck-green: #b4b86a; --ck-amber: #f8d98a;
+  --ck-feed: #b98648; --ck-sleep: #b98648; --ck-pump: #b98648; --ck-med: #b98648; --ck-appt: #b98648; }
+.clock-mode .ico.t-feed { color: var(--ck-feed); } .clock-mode .ico.t-sleep { color: var(--ck-sleep); } .clock-mode .ico.t-pump { color: var(--ck-pump); } .clock-mode .ico.t-mom_med { color: var(--ck-med); }
+.clock-appt { display: flex; align-items: center; margin-top: 10px; font-size: 21px; font-weight: 500; color: var(--ck-muted); white-space: nowrap; }
+.clock-appt svg { width: 20px; height: 20px; flex: none; margin-right: 9px; color: var(--ck-appt); }
+.clock-appt .pre, .clock-appt .post { flex: none; white-space: pre; }
+.clock-appt b { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.clock-appt b { font-weight: 650; color: var(--ck-text); }
 .clock-time { font-size: clamp(96px, min(22vh, 14vw), 184px); font-weight: 200; letter-spacing: -.04em; line-height: .9; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .clock-time small { font-size: .23em; font-weight: 300; letter-spacing: 0; color: var(--muted); margin-left: 10px; }
 /* The clock sits centred in its half; the date stays aligned under it. */
-.clock-left { justify-self: center; }
+.clock-left { justify-self: center; min-width: 0; max-width: 100%; }
 .clock-item i .next { color: var(--text); font-weight: 650; font-size: 1.1em; }
 .clock-date { font-size: 26px; color: var(--muted); font-weight: 500; margin-top: 14px; }
-.clock-glance { display: flex; flex-direction: column; gap: 20px; padding-left: 32px; border-left: 1px solid rgb(255 255 255 / .08); min-width: 0; }
+.clock-glance { display: flex; flex-direction: column; gap: 20px; padding-left: 32px; border-left: 1px solid var(--ck-line); min-width: 0; }
 .clock-item { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .clock-item > div { min-width: 0; }
-.clock-item .ico { width: 48px; aspect-ratio: 1; border-radius: 50%; background: color-mix(in srgb, currentColor 13%, transparent); }
+.clock-item .ico { width: 48px; aspect-ratio: 1; border-radius: 50%; background: color-mix(in srgb, currentColor 11%, transparent); }
 .clock-item .ico svg { width: 28px; height: 28px; }
 .clock-item b { display: block; font-size: clamp(26px, 4.4vh, 34px); font-weight: 700; letter-spacing: -.012em; line-height: 1.12; text-wrap: balance; overflow-wrap: anywhere; }
 /* Long lines wrap to two rather than being cut off */
 .clock-item i { display: block; font-style: normal; font-size: 19px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.clock-name { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom)); left: 44px; font-size: 20px; font-weight: 600; color: var(--muted); opacity: .8; }
-.clock-sync { position: absolute; bottom: calc(31px + env(safe-area-inset-bottom)); right: 44px; font-size: 16px; font-weight: 500; color: var(--muted); opacity: .7; font-variant-numeric: tabular-nums; }
+.clock-name { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom)); left: 44px; font-size: 20px; font-weight: 600; color: var(--ck-faint); }
+.clock-sync { position: absolute; bottom: calc(31px + env(safe-area-inset-bottom)); right: 44px; font-size: 16px; font-weight: 500; color: var(--ck-faint); font-variant-numeric: tabular-nums; }
 .clock-sync.warn { color: var(--amber, #f5b54a); opacity: 1; }

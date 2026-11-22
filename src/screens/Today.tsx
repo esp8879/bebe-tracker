@@ -5,7 +5,7 @@ import { useNav } from '../App';
 import { useNow } from '../hooks';
 import { dayOf, parseNYLocal, ageAt, ageDaysOnDay, fmtTime, fmtDur, fmtWhen, fmtShortDay, fmtLongDate } from '../lib/time';
 import { useDevice, useIdleClock, useMedia, TABLET_LANDSCAPE } from '../device';
-import { nextFeedDue, medTimer, rotationNext, pumpTimer, recentDoses, ROTATION_MEDS } from '../lib/timers';
+import { isNightAt, nextFeedDue, medTimer, rotationNext, pumpTimer, recentDoses, ROTATION_MEDS } from '../lib/timers';
 import { summaryForDay } from '../lib/summary';
 import { MEDS, STOOL_COLORS, medLabel, allMeds, type Med } from '../types';
 import { volValue, volLabel, fmtMl, fmtWeight, fmtPct, pctChange } from '../lib/units';
@@ -303,11 +303,23 @@ export function Today() {
           if (d) glance.push({ k: 'mom_med', head: `${medLabel(d.med)} ${ago(now - d.lastAt)} ago`, sub: fmtTime(d.lastAt) });
           else if (m) glance.push({ k: 'mom_med', head: m.ok ? `${medLabel(m.med)} OK now` : `${medLabel(m.med)} in ${fmtDur(m.rem)}`, cls: m.ok ? 'green' : '', sub: m.ok || !m.okAt ? '' : fmtTime(m.okAt) });
         }
+        // Paper by day, ember (amber on black) during this screen's Dim hours, whether or not Dim itself is on.
+        const ember = isNightAt(now, dev.dim);
+        // Next appointment, only when it's today or tomorrow; within two hours it counts down.
+        const ap0 = nextAppt && nextAppt.at > now ? nextAppt : null;
+        const apDay = ap0 ? dayOf(ap0.at) : '';
+        const apSoon = !!ap0 && ap0.at - now <= 2 * 3_600_000;
+        const apWhen = !ap0 || apSoon ? '' : apDay === today ? 'Today' : apDay === dayOf(now + 86_400_000) ? 'Tomorrow' : '';
+        // Only the title shortens with "…"; the time always shows.
+        const apLine = !ap0 || (!apSoon && !apWhen) ? null : <>
+          {apWhen && <span className="pre">{apWhen} · </span>}<b>{ap0.title}</b>
+          <span className="post">{apSoon ? ` in ${fmtDur(ap0.at - now)} · ${fmtTime(ap0.at)}` : ` ${fmtTime(ap0.at)}`}</span></>;
         return (
-          <div className="clock-mode" onClick={(e) => { e.stopPropagation(); e.preventDefault(); wake(); }} role="button" aria-label="Show Today">
+          <div className={`clock-mode ${ember ? 'ember' : 'paper'}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); wake(); }} role="button" aria-label="Show Today">
             <div className="clock-left">
               <div className="clock-time">{hm}<small>{ap}</small></div>
               <div className="clock-date">{fmtLongDate(now)}</div>
+              {apLine && <div className="clock-appt"><Icon name="appointments" />{apLine}</div>}
             </div>
             <div className="clock-glance">
               {glance.map((g) => (
