@@ -4,7 +4,7 @@ import { useUI } from '../ui';
 import { shareUrl, joinHousehold } from '../household';
 import { MEDS, allMeds, type Who } from '../types';
 import { Field, Seg } from '../components/common';
-import { getTimezone, deviceTimezone } from '../lib/time';
+import { getTimezone, deviceTimezone, fmtTime } from '../lib/time';
 import { entriesToCsv, backupJson, deliverFile } from '../lib/export';
 import { FEEDBACK_EMAIL, GUIDE_URL, NOTES_URL } from '../config';
 import { DocViewer } from '../components/DocViewer';
@@ -53,6 +53,8 @@ export function Settings() {
   const [busy, setBusy] = useState<string | null>(null);
   const [doc, setDoc] = useState<{ title: string; src: string } | null>(null);
   const dev = useDevice();
+  // When this screen last asked the server directly whether it's behind (the sync watchdog in the store).
+  const watchdogAt = (() => { try { return Number(localStorage.getItem('bebe.watchdogAt')) || 0; } catch { return 0; } })();
   const url = shareUrl(hid);
   const tz = settings.tz ?? getTimezone();
   const night = settings.night_feeds ?? { enabled: false, start: '21:00', end: '06:00' };
@@ -145,7 +147,7 @@ export function Settings() {
           </Field>
         )}
         <div className="muted small">Screen settings apply to this device only.</div>
-        <div className="muted small">Sync: {!online ? 'offline — entries are saved here and sent when back online' : stuck ? 'still sending — weak signal? Entries are safe on this phone and will go through.' : pending ? 'sending…' : 'up to date'}</div>
+        <div className="muted small">Sync: {!online ? 'offline — entries are saved here and sent when back online' : stuck ? 'still sending — weak signal? Entries are safe on this phone and will go through.' : pending ? 'sending…' : 'up to date'}{watchdogAt ? ` · checked ${fmtTime(watchdogAt)}` : ''}</div>
       </div>
 
       {!demo && (

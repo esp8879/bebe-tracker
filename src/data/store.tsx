@@ -140,6 +140,10 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
 
+  // Bumping this tears down and re-creates every listener: used when a listener errors out (Firestore ends a
+  // listener for good on some errors) and when the watchdog finds this screen behind the server.
+  const [listenGen, setListenGen] = useState(0);
+  const relisten = useCallback(() => { window.setTimeout(() => setListenGen((g) => g + 1), 5_000); }, []);
   // Live window: the last 30 days. Older days load on demand (Summary → Show older days).
   const windowStart = useMemo(() => Date.now() - 30 * 86_400_000, []);
   useEffect(() => {
@@ -148,8 +152,8 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
       setRecentEntries(snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as Entry).filter((e) => ENTRY_TYPES.includes(e.type)));
       setPendingRaw(snap.metadata.hasPendingWrites);
       if (!snap.metadata.fromCache) { const t = Date.now(); setChecking(false); setCachedOnly(false); setSyncedAt(t); lsSet('bebe.syncedAt', t); }
-    }, (err) => console.error('entries listener', err));
-  }, [entriesCol, windowStart]);
+    }, (err) => { console.error('entries listener', err); relisten(); });
+  }, [entriesCol, windowStart, listenGen, relisten]);
 
   // Watchdog for screens that never leave the app (an iPad on the nightstand): the visibility bounce above never
   // runs there, and a live stream can die silently (Wi-Fi blip, router timeout). Every 90 s, ask the server for the
@@ -170,6 +174,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
           body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'entries' }], orderBy: [{ field: { fieldPath: 'updated_at' }, direction: 'DESCENDING' }], limit: 1 } }),
         }).finally(() => clearTimeout(timer));
         if (!res.ok) return;
+        lsSet('bebe.watchdogAt', Date.now());
         const doc0 = ((await res.json()) as { document?: { name: string; fields?: Record<string, { integerValue?: string; doubleValue?: number }> } }[])[0]?.document;
         if (!doc0) return;
         const num = (k: string) => Number(doc0.fields?.[k]?.integerValue ?? doc0.fields?.[k]?.doubleValue ?? 0);
@@ -183,7 +188,16 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
         const again = recentRef.current.find((e) => e.id === d.id);
         if (again && (again.updated_at ?? 0) >= (server.updated_at ?? 0)) return;
         console.warn('entries stream looked stale; reconnecting');
+        lsSet('bebe.watchdogFixedAt', Date.now());
         await disableNetwork(db); await enableNetwork(db);
+        setListenGen((g) => g + 1);
+        // Still behind 20 s later: reload, which is what fixes it by hand. Only when nobody is mid-entry.
+        await new Promise((r) => setTimeout(r, 20_000));
+        const after = recentRef.current.find((e) => e.id === d.id);
+        if ((!after || (after.updated_at ?? 0) < server.updated_at) && !(document.querySelector('.sheet, .overlay') && !document.querySelector('.clock-mode'))) {
+          console.warn('still stale after reconnecting; reloading');
+          window.location.reload();
+        }
       } catch { /* offline or blocked: try again next round */ } finally { busy = false; }
     };
     const id = window.setInterval(check, 90_000);
@@ -212,15 +226,15 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     const q = query(apptsCol, orderBy('at', 'asc'), limit(500));
     return onSnapshot(q, (snap) => {
       setAppointments(snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as Appointment));
-    }, (err) => console.error('appointments listener', err));
-  }, [apptsCol]);
+    }, (err) => { console.error('appointments listener', err); relisten(); });
+  }, [apptsCol, listenGen, relisten]);
 
   useEffect(() => {
     const q = query(weightsCol, orderBy('at', 'asc'), limit(500));
     return onSnapshot(q, (snap) => {
       setAllWeights(snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as Weight));
-    }, (err) => console.error('weights listener', err));
-  }, [weightsCol]);
+    }, (err) => { console.error('weights listener', err); relisten(); });
+  }, [weightsCol, listenGen, relisten]);
   const weights = useMemo(() => allWeights.filter((w) => !w.deleted_at), [allWeights]);
 
   useEffect(() => {
@@ -248,8 +262,8 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
           try { localStorage.removeItem(SEED_KEY); } catch { /* ignore */ }
         } catch (e) { seededRef.current = false; console.error('seed settings', e); }
       }
-    }, (err) => console.error('settings listener', err));
-  }, [settingsDoc, entriesCol, hid]);
+    }, (err) => { console.error('settings listener', err); relisten(); });
+  }, [settingsDoc, entriesCol, hid, listenGen, relisten]);
 
   const setWho = useCallback((w: Who) => { setWhoLocal(w); setWhoState(w); }, []);
 

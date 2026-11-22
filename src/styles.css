@@ -267,7 +267,7 @@ table.compare td:nth-child(2) { font-weight: 700; }
 .card.nights .kv b { color: var(--text); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* Night dimming (per device, on a schedule): a layer over everything that dims and warms the screen. Taps pass through. */
-.night-dim { position: fixed; inset: 0; z-index: 200; pointer-events: none; background: rgba(12, 6, 0, .45); }
+.night-dim { position: fixed; inset: 0; z-index: 200; pointer-events: none; background: rgba(12, 6, 0, .33); }
 .night-dim.dimmer { background: rgba(12, 6, 0, .65); }
 
 /* Tablets in landscape (iPad mini and up): two columns, bigger type for reading across the room. */
