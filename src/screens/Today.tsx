@@ -288,8 +288,8 @@ export function Today() {
       </div>
       {clock && (() => {
         const [hm, ap] = fmtTime(now).split(' ');
-        const glance: { k: 'feed' | 'sleep' | 'pump' | 'mom_med'; head: string; cls?: string; sub: string }[] = [
-          { k: 'feed', head: feedLine, cls: feedClass, sub: !feed ? '' : feed.status === 'ok' ? `Next ${fmtTime(feed.dueAt)} · last fed ${fmtTime(feed.lastAt)}` : `Last fed ${fmtTime(feed.lastAt)}` },
+        const glance: { k: 'feed' | 'sleep' | 'pump' | 'mom_med'; head: string; cls?: string; sub: React.ReactNode }[] = [
+          { k: 'feed', head: feedLine, cls: feedClass, sub: !feed ? '' : feed.status === 'ok' ? <><span className="next">Next {fmtTime(feed.dueAt)}</span> · last fed {fmtTime(feed.lastAt)}</> : `Last fed ${fmtTime(feed.lastAt)}` },
         ];
         if (sleepOn) glance.push(asleep ? { k: 'sleep', head: `Asleep ${fmtDur(now - asleep.at)}`, sub: `since ${fmtTime(asleep.at)}` }
           : woke ? { k: 'sleep', head: `Awake ${fmtDur(now - woke)}`, sub: `woke ${fmtTime(woke)}` } : { k: 'sleep', head: 'No sleep logged yet', cls: 'muted', sub: '' });

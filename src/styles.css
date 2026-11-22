@@ -328,6 +328,9 @@ table.compare td:nth-child(2) { font-weight: 700; }
 .clock-mode { position: fixed; inset: 0; z-index: 150; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 8px; align-items: center; padding: 0 44px; background: var(--sky-paint); cursor: pointer; animation: fade .6s ease; -webkit-user-select: none; user-select: none; }
 .clock-time { font-size: clamp(96px, min(22vh, 14vw), 184px); font-weight: 200; letter-spacing: -.04em; line-height: .9; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .clock-time small { font-size: .23em; font-weight: 300; letter-spacing: 0; color: var(--muted); margin-left: 10px; }
+/* The clock sits centred in its half; the date stays aligned under it. */
+.clock-left { justify-self: center; }
+.clock-item i .next { color: var(--text); font-weight: 650; font-size: 1.1em; }
 .clock-date { font-size: 26px; color: var(--muted); font-weight: 500; margin-top: 14px; }
 .clock-glance { display: flex; flex-direction: column; gap: 20px; padding-left: 32px; border-left: 1px solid rgb(255 255 255 / .08); min-width: 0; }
 .clock-item { display: flex; align-items: center; gap: 16px; min-width: 0; }
