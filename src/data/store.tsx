@@ -161,7 +161,14 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   const recentRef = useRef(recentEntries);
   recentRef.current = recentEntries;
   useEffect(() => {
-    let busy = false;
+    // Nothing here awaits the SDK: on 2026-11-22 the iPad stayed stale until killed, most likely because a
+    // reconnect call hung and wedged the old await chain. Now each round is independent; behind on two rounds
+    // in a row (about a minute apart) means reload, which is what fixes it by hand.
+    let busy = false, behindSince = 0;
+    const behind = (id: string, updatedAt: number) => {
+      const mine = recentRef.current.find((e) => e.id === id);
+      return !mine || (mine.updated_at ?? 0) < updatedAt;
+    };
     const check = async () => {
       if (busy || document.visibilityState !== 'visible' || !navigator.onLine) return;
       busy = true;
@@ -176,31 +183,26 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
         if (!res.ok) return;
         lsSet('bebe.watchdogAt', Date.now());
         const doc0 = ((await res.json()) as { document?: { name: string; fields?: Record<string, { integerValue?: string; doubleValue?: number }> } }[])[0]?.document;
-        if (!doc0) return;
-        const num = (k: string) => Number(doc0.fields?.[k]?.integerValue ?? doc0.fields?.[k]?.doubleValue ?? 0);
-        const d = { id: doc0.name.split('/').pop()! };
-        const server = { at: num('at'), updated_at: num('updated_at') };
-        if (server.at < windowStart) return; // an edit to an entry outside the live window
-        const mine = recentRef.current.find((e) => e.id === d.id);
-        if (mine && (mine.updated_at ?? 0) >= (server.updated_at ?? 0)) return;
-        // Give a change that just landed a moment to arrive the normal way before reconnecting.
-        await new Promise((r) => setTimeout(r, 5_000));
-        const again = recentRef.current.find((e) => e.id === d.id);
-        if (again && (again.updated_at ?? 0) >= (server.updated_at ?? 0)) return;
-        console.warn('entries stream looked stale; reconnecting');
-        lsSet('bebe.watchdogFixedAt', Date.now());
-        await disableNetwork(db); await enableNetwork(db);
-        setListenGen((g) => g + 1);
-        // Still behind 20 s later: reload, which is what fixes it by hand. Only when nobody is mid-entry.
-        await new Promise((r) => setTimeout(r, 20_000));
-        const after = recentRef.current.find((e) => e.id === d.id);
-        if ((!after || (after.updated_at ?? 0) < server.updated_at) && !(document.querySelector('.sheet, .overlay') && !document.querySelector('.clock-mode'))) {
-          console.warn('still stale after reconnecting; reloading');
-          window.location.reload();
+        const num = (k: string) => Number(doc0?.fields?.[k]?.integerValue ?? doc0?.fields?.[k]?.doubleValue ?? 0);
+        // An edit to an entry outside the live window doesn't count.
+        if (!doc0 || num('at') < windowStart || !behind(doc0.name.split('/').pop()!, num('updated_at'))) { behindSince = 0; return; }
+        if (!behindSince) {
+          behindSince = Date.now();
+          console.warn('entries stream looked stale; reconnecting');
+          lsSet('bebe.watchdogFixedAt', Date.now());
+          void disableNetwork(db).then(() => enableNetwork(db)).catch(() => {});
+          setListenGen((g) => g + 1);
+          window.setTimeout(() => void check(), 30_000);
+          return;
         }
+        if (Date.now() - behindSince < 25_000) return;
+        if (document.querySelector('.sheet, .overlay') && !document.querySelector('.clock-mode')) return; // someone is mid-entry: next round
+        console.warn('still stale after reconnecting; reloading');
+        lsSet('bebe.watchdogReloadAt', Date.now());
+        window.location.reload();
       } catch { /* offline or blocked: try again next round */ } finally { busy = false; }
     };
-    const id = window.setInterval(check, 90_000);
+    const id = window.setInterval(() => void check(), 60_000);
     return () => window.clearInterval(id);
   }, [hid, windowStart]);
 
