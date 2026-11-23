@@ -325,7 +325,7 @@ table.compare td:nth-child(2) { font-weight: 700; }
 .sky { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--sky-paint); }
 
 /* Clock mode: big screens held sideways, after a few idle minutes (per device). One tap anywhere returns to Today. */
-/* Clock mode is paper by day and ember (amber on near-black) during this screen's Dim hours. The palette lives in
+/* Clock mode is paper by day and ember (warm white on near-black) during this screen's Dim hours. The palette lives in
    registered custom properties so the switch fades over a minute instead of flipping; --text/--muted/--red/… are
    re-pointed inside so shared classes (.red, .green, .amber, .clock-sync.warn) pick it up. */
 @property --ck-bg { syntax: '<color>'; inherits: true; initial-value: #efe9dc; }
@@ -348,8 +348,8 @@ table.compare td:nth-child(2) { font-weight: 700; }
   transition: --ck-bg 60s, --ck-glow 60s, --ck-text 60s, --ck-muted 60s, --ck-faint 60s, --ck-line 60s, --ck-red 60s, --ck-green 60s, --ck-amber 60s, --ck-feed 60s, --ck-sleep 60s, --ck-pump 60s, --ck-med 60s, --ck-appt 60s; }
 .clock-mode.paper { --ck-bg: #efe9dc; --ck-glow: #fbf8f1; --ck-text: #2a2620; --ck-muted: #776f62; --ck-faint: #8d8475; --ck-line: rgba(60,45,20,.13); --ck-red: #b3402c; --ck-green: #2c7a4b; --ck-amber: #a96a12;
   --ck-feed: #4a62c4; --ck-sleep: #9c7a22; --ck-pump: #8450b3; --ck-med: #b06f16; --ck-appt: #b8577a; }
-.clock-mode.ember { --ck-bg: #0a0705; --ck-glow: #0a0705; --ck-text: #e3a55e; --ck-muted: #93704a; --ck-faint: #7d5f3e; --ck-line: rgba(227,165,94,.12); --ck-red: #e0745a; --ck-green: #b4b86a; --ck-amber: #f8d98a;
-  --ck-feed: #b98648; --ck-sleep: #b98648; --ck-pump: #b98648; --ck-med: #b98648; --ck-appt: #b98648; }
+.clock-mode.ember { --ck-bg: #0a0806; --ck-glow: #0a0806; --ck-text: #f1e4d0; --ck-muted: #a6957c; --ck-faint: #847664; --ck-line: rgba(241,228,208,.12); --ck-red: #f0a48e; --ck-green: #c4c793; --ck-amber: #f6cf7a;
+  --ck-feed: #c9b08a; --ck-sleep: #c9b08a; --ck-pump: #c9b08a; --ck-med: #c9b08a; --ck-appt: #c9b08a; }
 .clock-mode .ico.t-feed { color: var(--ck-feed); } .clock-mode .ico.t-sleep { color: var(--ck-sleep); } .clock-mode .ico.t-pump { color: var(--ck-pump); } .clock-mode .ico.t-mom_med { color: var(--ck-med); }
 .clock-appt { display: flex; align-items: center; margin-top: 10px; font-size: 21px; font-weight: 500; color: var(--ck-muted); white-space: nowrap; }
 .clock-appt svg { width: 20px; height: 20px; flex: none; margin-right: 9px; color: var(--ck-appt); }
