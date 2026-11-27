@@ -45,7 +45,7 @@ const TIMEZONES: string[] = (() => {
 })();
 
 export function Settings() {
-  const { settings, saveSettings, who, setWho, hid, pending, stuck, online, entries, weights, appointments, loadOlder, deleteHousehold, demo } = useStore();
+  const { settings, saveSettings, who, setWho, hid, pending, stuck, unsent, online, entries, weights, appointments, loadOlder, deleteHousehold, demo } = useStore();
   const { toast } = useUI();
   const [copied, setCopied] = useState(false);
   const [joinLink, setJoinLink] = useState('');
@@ -147,7 +147,7 @@ export function Settings() {
           </Field>
         )}
         <div className="muted small">Screen settings apply to this device only.</div>
-        <div className="muted small">Sync: {!online ? 'offline — entries are saved here and sent when back online' : stuck ? 'still sending — weak signal? Entries are safe on this phone and will go through.' : pending ? 'sending…' : 'up to date'}{watchdogAt ? ` · checked ${fmtTime(watchdogAt)}` : ''}</div>
+        <div className="muted small">Sync: {!online ? 'offline — entries are saved here and sent when back online' : stuck || unsent ? 'still sending — weak signal? Entries are safe on this phone and will go through.' : pending ? 'sending…' : 'up to date'}{watchdogAt ? ` · checked ${fmtTime(watchdogAt)}` : ''}</div>
       </div>
 
       {!demo && (

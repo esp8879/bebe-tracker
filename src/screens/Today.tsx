@@ -46,7 +46,7 @@ function FitLine({ children, max, min, style }: { children: string; max: number;
 }
 
 export function Today() {
-  const { entries, settings, pending, stuck, online, appointments, weights, demo, freshness, syncedAt, confirmedAt, behind } = useStore();
+  const { entries, settings, pending, stuck, online, appointments, weights, demo, freshness, syncedAt, confirmedAt, behind, unsent } = useStore();
   const { openEditor, openWeightEditor } = useUI();
   const { setTab, setSummaryMode } = useNav();
   const now = useNow(15_000);
@@ -111,7 +111,7 @@ export function Today() {
           {demo ? <span className="badge demo">Demo</span>
             : !online ? <span className="badge warn">offline{syncedAt ? ` · as of ${asOf(syncedAt, now)}` : ''}</span>
             : freshness === 'cached' && syncedAt ? <span className="badge">as of {asOf(syncedAt, now)}</span>
-            : stuck ? <span className="badge warn">still syncing…</span>
+            : stuck || unsent ? <span className="badge warn">not sent yet…</span>
             : pending ? <span className="badge">syncing…</span>
             : <div className="mono muted">{fmtTime(now)}</div>}
         </div>
@@ -334,7 +334,9 @@ export function Today() {
               // How sure this screen is that it shows the latest: refreshed every minute by the watchdog.
               const last = confirmedAt ?? syncedAt;
               const at = last ? ` · last updated ${fmtTime(last)}` : '';
+              // Outgoing first: "Up to date" must never show while a change made here hasn't reached the server.
               const [cls, text] = !online ? ['warn', `Offline${at}`]
+                : unsent || stuck ? ['warn', 'Not sent yet · reconnecting']
                 : behind || !confirmedAt || now - confirmedAt > 3 * 60_000 ? ['warn', `Catching up${at}`]
                 : ['', `Up to date · ${fmtTime(confirmedAt)}`];
               return <div className={`clock-sync ${cls}`}>{text}</div>;

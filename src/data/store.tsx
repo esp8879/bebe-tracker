@@ -37,6 +37,8 @@ export interface Store {
   confirmedAt: number | null;
   /** The watchdog found the server ahead of this screen and is catching up. */
   behind: boolean;
+  /** The watchdog found a change made here that the server still doesn't have after a minute. */
+  unsent: boolean;
   add: (e: NewEntry) => Promise<string>;
   update: (id: string, patch: Partial<Entry>) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -95,6 +97,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   const [syncedAt, setSyncedAt] = useState<number | null>(() => lsNum('bebe.syncedAt') || null);
   const [confirmedAt, setConfirmedAt] = useState<number | null>(null);
   const [behindNow, setBehindNow] = useState(false);
+  const [unsentNow, setUnsentNow] = useState(false);
   useEffect(() => {
     if (!checking) return;
     const t = window.setTimeout(() => { setChecking(false); setCachedOnly(true); }, 4000);
@@ -126,12 +129,12 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   // On return after a long hide, bounce the network so it reconnects immediately.
   useEffect(() => {
     let hiddenAt = 0;
-    const onVis = async () => {
+    const onVis = () => {
       if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); lsSet('bebe.lastSeen', hiddenAt); return; }
       if (hiddenAt && Date.now() - hiddenAt > STALE_AFTER) setChecking(true);
       lsSet('bebe.lastSeen', Date.now());
       if (hiddenAt && Date.now() - hiddenAt > 10_000) {
-        try { await disableNetwork(db); await enableNetwork(db); } catch { /* ignore */ }
+        void disableNetwork(db).then(() => enableNetwork(db)).catch(() => {}); // never await the SDK: a hung call wedges
       }
       hiddenAt = 0;
     };
@@ -170,6 +173,10 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     // Nothing here awaits the SDK: on 2026-11-22 the iPad stayed stale until killed, most likely because a
     // reconnect call hung and wedged the old await chain. Now each round is independent; behind on two rounds
     // in a row (about a minute apart) means reload, which is what fixes it by hand.
+    // It also checks the other direction: on 2026-11-27 a feed logged on the iPad never reached the server while
+    // the clock said "Up to date". If the newest change this screen holds is a minute old and newer than anything
+    // the server has, it was made here and never sent: same reconnect, then reload (queued writes live in
+    // IndexedDB and go out on reload).
     let busy = false, behindSince = 0;
     const behind = (id: string, updatedAt: number) => {
       const mine = recentRef.current.find((e) => e.id === id);
@@ -191,11 +198,16 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
         const doc0 = ((await res.json()) as { document?: { name: string; fields?: Record<string, { integerValue?: string; doubleValue?: number }> } }[])[0]?.document;
         const num = (k: string) => Number(doc0?.fields?.[k]?.integerValue ?? doc0?.fields?.[k]?.doubleValue ?? 0);
         // An edit to an entry outside the live window doesn't count.
-        if (!doc0 || num('at') < windowStart || !behind(doc0.name.split('/').pop()!, num('updated_at'))) { behindSince = 0; setBehindNow(false); setConfirmedAt(Date.now()); return; }
+        const serverNewest = num('updated_at');
+        const mineNewest = recentRef.current.reduce((m, e) => Math.max(m, e.updated_at ?? 0), 0);
+        const unsent = mineNewest > serverNewest && Date.now() - mineNewest > 60_000;
+        const late = !!doc0 && num('at') >= windowStart && behind(doc0.name.split('/').pop()!, serverNewest);
+        setUnsentNow(unsent);
+        if (!late && !unsent) { behindSince = 0; setBehindNow(false); setConfirmedAt(Date.now()); return; }
         if (!behindSince) {
           behindSince = Date.now();
-          setBehindNow(true);
-          console.warn('entries stream looked stale; reconnecting');
+          setBehindNow(late);
+          console.warn(unsent ? 'a change made here never reached the server; reconnecting' : 'entries stream looked stale; reconnecting');
           lsSet('bebe.watchdogFixedAt', Date.now());
           void disableNetwork(db).then(() => enableNetwork(db)).catch(() => {});
           setListenGen((g) => g + 1);
@@ -204,6 +216,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
         }
         if (Date.now() - behindSince < 25_000) return;
         if (document.querySelector('.sheet, .overlay') && !document.querySelector('.clock-mode')) return; // someone is mid-entry: next round
+        if (Date.now() - lsNum('bebe.watchdogReloadAt') < 10 * 60_000) return; // reloaded recently: don't loop
         console.warn('still stale after reconnecting; reloading');
         lsSet('bebe.watchdogReloadAt', Date.now());
         window.location.reload();
@@ -357,10 +370,10 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   }, [entriesCol, weightsCol, apptsCol, historyCol, settingsDoc]);
 
   const value = useMemo<Store>(() => ({
-    hid, demo: false, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, freshness: checking ? 'checking' : cachedOnly ? 'cached' : 'fresh', syncedAt, confirmedAt, behind: behindNow, add, update, remove, restore, saveSettings,
+    hid, demo: false, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, freshness: checking ? 'checking' : cachedOnly ? 'cached' : 'fresh', syncedAt, confirmedAt, behind: behindNow, unsent: unsentNow, add, update, remove, restore, saveSettings,
     appointments, addAppt, updateAppt, removeAppt, restoreAppt,
     weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold,
-  }), [hid, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, checking, cachedOnly, syncedAt, confirmedAt, behindNow, add, update, remove, restore, saveSettings, appointments, addAppt, updateAppt, removeAppt, restoreAppt, weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold]);
+  }), [hid, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, checking, cachedOnly, syncedAt, confirmedAt, behindNow, unsentNow, add, update, remove, restore, saveSettings, appointments, addAppt, updateAppt, removeAppt, restoreAppt, weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
