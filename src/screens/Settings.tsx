@@ -1,3 +1,4 @@
+import { readSyncLog } from '../lib/syncLog';
 import { useEffect, useState } from 'react';
 import { useStore } from '../data/store';
 import { useUI } from '../ui';
@@ -148,6 +149,8 @@ export function Settings() {
         )}
         <div className="muted small">Screen settings apply to this device only.</div>
         <div className="muted small">Sync: {!online ? 'offline — entries are saved here and sent when back online' : stuck || unsent ? 'still sending — weak signal? Entries are safe on this phone and will go through.' : pending ? 'sending…' : 'up to date'}{watchdogAt ? ` · checked ${fmtTime(watchdogAt)}` : ''}</div>
+        {readSyncLog().length > 0 && <details className="muted small sync-log"><summary>Sync log</summary>
+          {readSyncLog().map(([t, m], i) => <div key={i}>{fmtTime(t)} · {m}</div>)}</details>}
       </div>
 
       {!demo && (

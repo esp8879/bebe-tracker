@@ -373,3 +373,4 @@ table.compare td:nth-child(2) { font-weight: 700; }
 .clock-name { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom)); left: 44px; font-size: 20px; font-weight: 600; color: var(--ck-faint); }
 .clock-sync { position: absolute; bottom: calc(31px + env(safe-area-inset-bottom)); right: 44px; font-size: 16px; font-weight: 500; color: var(--ck-faint); font-variant-numeric: tabular-nums; }
 .clock-sync.warn { color: var(--amber, #f5b54a); opacity: 1; }
+.sync-log { margin-top: 6px; overflow-wrap: anywhere; } .sync-log summary { cursor: pointer; }

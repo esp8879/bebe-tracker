@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { captureFirestoreWarnings } from './lib/syncLog';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 
 export const PROJECT_ID = 'bebe-tracker-1cf656';
@@ -10,6 +11,8 @@ const app = initializeApp({
   storageBucket: 'bebe-tracker-1cf656.firebasestorage.app',
   messagingSenderId: '110836298989',
 });
+
+captureFirestoreWarnings();
 
 /** Persistent IndexedDB cache: offline reads and queued writes survive reloads. */
 export const db = initializeFirestore(app, {

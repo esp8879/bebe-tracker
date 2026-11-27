@@ -7,6 +7,7 @@ import { getWho, setWhoLocal, SEED_KEY } from '../household';
 import { DEFAULT_SETTINGS, ENTRY_TYPES, type Entry, type Settings, type Who, type Appointment, type Weight } from '../types';
 import { dayOf, setTimezone, deviceTimezone } from '../lib/time';
 import { setUnits } from '../lib/units';
+import { logSync } from '../lib/syncLog';
 
 type NewEntry = Omit<Entry, 'id' | 'day' | 'created_at' | 'updated_at' | 'logged_by' | 'deleted_at'>;
 export type NewAppointment = Omit<Appointment, 'id' | 'day' | 'created_at' | 'updated_at' | 'deleted_at'>;
@@ -72,6 +73,15 @@ export const useStore = () => {
 };
 
 const STALE_AFTER = 20 * 60_000;
+/** A Firestore document's fields in the REST API's typed-value form. */
+type RestValue = Record<string, unknown>;
+const restValue = (v: unknown): RestValue => v === null || v === undefined ? { nullValue: null }
+  : typeof v === 'boolean' ? { booleanValue: v }
+  : typeof v === 'number' ? (Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v })
+  : typeof v === 'string' ? { stringValue: v }
+  : Array.isArray(v) ? { arrayValue: { values: v.map(restValue) } }
+  : { mapValue: { fields: restFields(v as Record<string, unknown>) } };
+const restFields = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined).map(([k, v]) => [k, restValue(v)]));
 const lsNum = (k: string) => { try { return Number(localStorage.getItem(k)) || 0; } catch { return 0; } };
 const lsSet = (k: string, v: number) => { try { localStorage.setItem(k, String(v)); } catch { /* ignore */ } };
 
@@ -153,6 +163,10 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   // listener for good on some errors) and when the watchdog finds this screen behind the server.
   const [listenGen, setListenGen] = useState(0);
   const relisten = useCallback(() => { window.setTimeout(() => setListenGen((g) => g + 1), 5_000); }, []);
+  const pendingSinceRef = useRef(new Map<string, number>());
+  const pendingDataRef = useRef(new Map<string, DocumentData>());
+  /** Every write the SDK is stuck on has been delivered over plain HTTPS instead. */
+  const [covered, setCovered] = useState(false);
   // Live window: the last 30 days. Older days load on demand (Summary → Show older days).
   const windowStart = useMemo(() => Date.now() - 30 * 86_400_000, []);
   useEffect(() => {
@@ -160,6 +174,15 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     return onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
       setRecentEntries(snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as Entry).filter((e) => ENTRY_TYPES.includes(e.type)));
       setPendingRaw(snap.metadata.hasPendingWrites);
+      // Which entries still wait for the server, since when, and their local data (for the backup send below).
+      const since = pendingSinceRef.current, now = Date.now(), live = new Set<string>();
+      for (const d of snap.docs) if (d.metadata.hasPendingWrites) {
+        live.add(d.id);
+        if (!since.has(d.id)) since.set(d.id, now);
+        pendingDataRef.current.set(d.id, d.data());
+      }
+      for (const id of [...since.keys()]) if (!live.has(id)) { since.delete(id); pendingDataRef.current.delete(id); }
+      if (!live.size) setCovered(false);
       if (!snap.metadata.fromCache) { const t = Date.now(); setChecking(false); setCachedOnly(false); setSyncedAt(t); setConfirmedAt(t); lsSet('bebe.syncedAt', t); }
     }, (err) => { console.error('entries listener', err); relisten(); });
   }, [entriesCol, windowStart, listenGen, relisten]);
@@ -178,6 +201,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     // the server has, it was made here and never sent: same reconnect, then reload (queued writes live in
     // IndexedDB and go out on reload).
     let busy = false, behindSince = 0;
+    const sentRef = { current: new Map<string, number>() };
     const behind = (id: string, updatedAt: number) => {
       const mine = recentRef.current.find((e) => e.id === id);
       return !mine || (mine.updated_at ?? 0) < updatedAt;
@@ -198,16 +222,40 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
         const doc0 = ((await res.json()) as { document?: { name: string; fields?: Record<string, { integerValue?: string; doubleValue?: number }> } }[])[0]?.document;
         const num = (k: string) => Number(doc0?.fields?.[k]?.integerValue ?? doc0?.fields?.[k]?.doubleValue ?? 0);
         // An edit to an entry outside the live window doesn't count.
+        // Backup send: entries the SDK has held for over a minute go to the server over plain HTTPS, the same route
+        // this check just used. Only when the server lacks that version, and each version once.
+        const base = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/households/${hid}/entries/`;
+        let stuckLeft = 0, stuckAny = false;
+        for (const [eid, t] of pendingSinceRef.current) {
+          if (Date.now() - t < 60_000) continue;
+          const data = pendingDataRef.current.get(eid);
+          if (!data) continue;
+          stuckAny = true;
+          const mineAt = Number(data.updated_at ?? 0);
+          if (sentRef.current.get(eid) === mineAt) continue;
+          try {
+            const g = await fetch(base + eid);
+            const theirs = g.ok ? Number(((await g.json()) as { fields?: Record<string, { integerValue?: string }> }).fields?.updated_at?.integerValue ?? 0) : 0;
+            if (!g.ok && g.status !== 404) { stuckLeft++; continue; }
+            if (theirs < mineAt) {
+              const put = await fetch(base + eid, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ fields: restFields(data) }) });
+              if (!put.ok) { stuckLeft++; logSync(`backup send failed ${put.status}`); continue; }
+              logSync(`sent ${String(data.type ?? 'entry')} by backup route`);
+            }
+            sentRef.current.set(eid, mineAt);
+          } catch { stuckLeft++; }
+        }
+        setCovered(stuckAny && stuckLeft === 0);
         const serverNewest = num('updated_at');
         const mineNewest = recentRef.current.reduce((m, e) => Math.max(m, e.updated_at ?? 0), 0);
-        const unsent = mineNewest > serverNewest && Date.now() - mineNewest > 60_000;
+        const unsent = stuckLeft > 0 || (!stuckAny && mineNewest > serverNewest && Date.now() - mineNewest > 60_000);
         const late = !!doc0 && num('at') >= windowStart && behind(doc0.name.split('/').pop()!, serverNewest);
         setUnsentNow(unsent);
         if (!late && !unsent) { behindSince = 0; setBehindNow(false); setConfirmedAt(Date.now()); return; }
         if (!behindSince) {
           behindSince = Date.now();
           setBehindNow(late);
-          console.warn(unsent ? 'a change made here never reached the server; reconnecting' : 'entries stream looked stale; reconnecting');
+          logSync(unsent ? 'a change made here never reached the server; reconnecting' : 'entries stream looked stale; reconnecting');
           lsSet('bebe.watchdogFixedAt', Date.now());
           void disableNetwork(db).then(() => enableNetwork(db)).catch(() => {});
           setListenGen((g) => g + 1);
@@ -217,7 +265,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
         if (Date.now() - behindSince < 25_000) return;
         if (document.querySelector('.sheet, .overlay') && !document.querySelector('.clock-mode')) return; // someone is mid-entry: next round
         if (Date.now() - lsNum('bebe.watchdogReloadAt') < 10 * 60_000) return; // reloaded recently: don't loop
-        console.warn('still stale after reconnecting; reloading');
+        logSync('still stale after reconnecting; reloading');
         lsSet('bebe.watchdogReloadAt', Date.now());
         window.location.reload();
       } catch { /* offline or blocked: try again next round */ } finally { busy = false; }
@@ -370,10 +418,10 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   }, [entriesCol, weightsCol, apptsCol, historyCol, settingsDoc]);
 
   const value = useMemo<Store>(() => ({
-    hid, demo: false, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, freshness: checking ? 'checking' : cachedOnly ? 'cached' : 'fresh', syncedAt, confirmedAt, behind: behindNow, unsent: unsentNow, add, update, remove, restore, saveSettings,
+    hid, demo: false, who, setWho, entries, settings, settingsLoaded, pending: pending && !covered, stuck: stuck && !covered, online, freshness: checking ? 'checking' : cachedOnly ? 'cached' : 'fresh', syncedAt, confirmedAt, behind: behindNow, unsent: unsentNow, add, update, remove, restore, saveSettings,
     appointments, addAppt, updateAppt, removeAppt, restoreAppt,
     weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold,
-  }), [hid, who, setWho, entries, settings, settingsLoaded, pending, stuck, online, checking, cachedOnly, syncedAt, confirmedAt, behindNow, unsentNow, add, update, remove, restore, saveSettings, appointments, addAppt, updateAppt, removeAppt, restoreAppt, weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold]);
+  }), [hid, who, setWho, entries, settings, settingsLoaded, pending, stuck, covered, online, checking, cachedOnly, syncedAt, confirmedAt, behindNow, unsentNow, add, update, remove, restore, saveSettings, appointments, addAppt, updateAppt, removeAppt, restoreAppt, weights, addWeight, updateWeight, removeWeight, restoreWeight, olderLoaded, loadOlder, deleteHousehold]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
