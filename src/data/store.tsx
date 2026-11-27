@@ -7,7 +7,8 @@ import { getWho, setWhoLocal, SEED_KEY } from '../household';
 import { DEFAULT_SETTINGS, ENTRY_TYPES, type Entry, type Settings, type Who, type Appointment, type Weight } from '../types';
 import { dayOf, setTimezone, deviceTimezone } from '../lib/time';
 import { setUnits } from '../lib/units';
-import { logSync } from '../lib/syncLog';
+import { logSync, fsDiagnostics } from '../lib/syncLog';
+import { RESET_CACHE_KEY } from '../firebase';
 
 type NewEntry = Omit<Entry, 'id' | 'day' | 'created_at' | 'updated_at' | 'logged_by' | 'deleted_at'>;
 export type NewAppointment = Omit<Appointment, 'id' | 'day' | 'created_at' | 'updated_at' | 'deleted_at'>;
@@ -165,6 +166,8 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
   const relisten = useCallback(() => { window.setTimeout(() => setListenGen((g) => g + 1), 5_000); }, []);
   const pendingSinceRef = useRef(new Map<string, number>());
   const pendingDataRef = useRef(new Map<string, DocumentData>());
+  /** Unsent writes outside entries (these have no backup route), so a cache reset never drops them. */
+  const otherPendingRef = useRef({ appts: false, weights: false, settings: false });
   /** Every write the SDK is stuck on has been delivered over plain HTTPS instead. */
   const [covered, setCovered] = useState(false);
   // Live window: the last 30 days. Older days load on demand (Summary → Show older days).
@@ -202,6 +205,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     // IndexedDB and go out on reload).
     let busy = false, behindSince = 0;
     const sentRef = { current: new Map<string, number>() };
+    let diagnosed = false;
     const behind = (id: string, updatedAt: number) => {
       const mine = recentRef.current.find((e) => e.id === id);
       return !mine || (mine.updated_at ?? 0) < updatedAt;
@@ -246,6 +250,22 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
           } catch { stuckLeft++; }
         }
         setCovered(stuckAny && stuckLeft === 0);
+        if (stuckAny && !diagnosed) { diagnosed = true; logSync(await fsDiagnostics()); }
+        // Self-repair. On 2026-11-27 the iPad's Firestore held a feed for an hour with no errors at all, even
+        // after a restart: its saved local state (the IndexedDB cache) had stopped sending. Once everything it holds
+        // has gone out by the backup route and it still hasn't sent on its own after 5 minutes, wipe that local
+        // cache and reload: the app re-downloads the last 30 days and starts clean. At most every 6 hours.
+        const oldest = Math.min(...[...pendingSinceRef.current.values()], Infinity);
+        const op = otherPendingRef.current;
+        if (stuckAny && stuckLeft === 0 && Date.now() - oldest > 5 * 60_000 && !op.appts && !op.weights && !op.settings
+          && Date.now() - lsNum('bebe.cacheResetAt') > 6 * 3_600_000
+          && (!document.querySelector('.sheet, .overlay') || document.querySelector('.clock-mode'))) {
+          logSync('Firestore kept holding sent entries 5+ min: resetting this device\'s local cache');
+          lsSet('bebe.cacheResetAt', Date.now());
+          lsSet(RESET_CACHE_KEY, 1);
+          window.location.reload();
+          return;
+        }
         const serverNewest = num('updated_at');
         const mineNewest = recentRef.current.reduce((m, e) => Math.max(m, e.updated_at ?? 0), 0);
         const unsent = stuckLeft > 0 || (!stuckAny && mineNewest > serverNewest && Date.now() - mineNewest > 60_000);
@@ -294,14 +314,16 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
 
   useEffect(() => {
     const q = query(apptsCol, orderBy('at', 'asc'), limit(500));
-    return onSnapshot(q, (snap) => {
+    return onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
+      otherPendingRef.current.appts = snap.metadata.hasPendingWrites;
       setAppointments(snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as Appointment));
     }, (err) => { console.error('appointments listener', err); relisten(); });
   }, [apptsCol, listenGen, relisten]);
 
   useEffect(() => {
     const q = query(weightsCol, orderBy('at', 'asc'), limit(500));
-    return onSnapshot(q, (snap) => {
+    return onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
+      otherPendingRef.current.weights = snap.metadata.hasPendingWrites;
       setAllWeights(snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as Weight));
     }, (err) => { console.error('weights listener', err); relisten(); });
   }, [weightsCol, listenGen, relisten]);
@@ -309,6 +331,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
 
   useEffect(() => {
     return onSnapshot(settingsDoc, { includeMetadataChanges: true }, async (snap) => {
+      otherPendingRef.current.settings = snap.metadata.hasPendingWrites;
       if (snap.exists()) {
         const s = { ...DEFAULT_SETTINGS, ...(snap.data() as Partial<Settings>) };
         setTimezone(s.tz ?? 'America/New_York');
@@ -341,7 +364,7 @@ export function StoreProvider({ hid, children }: { hid: string; children: ReactN
     const id = newId();
     const now = Date.now();
     const data = { ...e, day: dayOf(e.at), created_at: now, updated_at: now, logged_by: who ?? 'other', deleted_at: null };
-    void setDoc(doc(entriesCol, id), data); // not awaited: resolves only when the server acks, but the local cache applies instantly
+    void setDoc(doc(entriesCol, id), data).then(() => { const s = Math.round((Date.now() - now) / 1000); if (s >= 10) logSync(`server confirmed ${e.type} after ${s}s`); }, (err) => logSync(`save failed: ${String(err?.code ?? err)}`)); // not awaited: resolves only when the server acks, but the local cache applies instantly
     return id;
   }, [entriesCol, who]);
 

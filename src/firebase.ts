@@ -14,6 +14,16 @@ const app = initializeApp({
 
 captureFirestoreWarnings();
 
+/** Set by the watchdog's self-repair: delete this device's Firestore cache before Firestore opens it. Requests on
+ *  the same IndexedDB database run in order, so the delete finishes before the SDK's open below. */
+export const RESET_CACHE_KEY = 'bebe.resetCache';
+try {
+  if (localStorage.getItem(RESET_CACHE_KEY)) {
+    localStorage.removeItem(RESET_CACHE_KEY);
+    indexedDB.deleteDatabase(`firestore/[DEFAULT]/${'bebe-tracker-1cf656'}/main`);
+  }
+} catch { /* ignore */ }
+
 /** Persistent IndexedDB cache: offline reads and queued writes survive reloads. */
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
